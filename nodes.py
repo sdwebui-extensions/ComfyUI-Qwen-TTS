@@ -48,21 +48,34 @@ MODEL_FAMILY_TO_HF = {
     "1.7B": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
 }
 
-# Add current directory to sys.path to allow importing qwen_tts package
+# Handle qwen_tts package import
 current_dir = os.path.dirname(os.path.abspath(__file__))
+qwen_tts_dir = os.path.join(current_dir, "qwen_tts")
+
+# Ensure the parent directory is in sys.path for absolute import
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 try:
+    # Try as a relative import first (standard for ComfyUI package structure)
     from .qwen_tts import Qwen3TTSModel, VoiceClonePromptItem
 except (ImportError, ValueError):
     try:
-        from qwen_tts import Qwen3TTSModel, VoiceClonePromptItem
+        # Fallback to absolute import
+        import qwen_tts
+        Qwen3TTSModel = qwen_tts.Qwen3TTSModel
+        VoiceClonePromptItem = qwen_tts.VoiceClonePromptItem
     except ImportError as e:
         import traceback
-        print(f"❌ Failed to import Qwen3-TTS: {e}")
-        traceback.print_exc()
-        print("Please ensure the qwen_tts package is present and all dependencies (transformers, torch, librosa, soundfile) are installed.")
+        print(f"\n❌ [Qwen3-TTS] Critical Import Error: {e}")
+        if not os.path.exists(qwen_tts_dir):
+            print(f"   Missing directory: {qwen_tts_dir}")
+            print("   Please clone the repository with submodules or ensure 'qwen_tts' folder exists.")
+        else:
+            print("   Traceback for debugging:")
+            traceback.print_exc()
+            print("\n   Common fix: run 'pip install -r requirements.txt' in your ComfyUI environment.")
+        
         Qwen3TTSModel = None
         VoiceClonePromptItem = None
 
@@ -149,6 +162,12 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
         print(f"✅ [Qwen3-TTS] Loading local model: {os.path.basename(final_source)}")
     else:
         print(f"🌐 [Qwen3-TTS] Loading remote model: {final_source}")
+
+    if Qwen3TTSModel is None:
+        raise RuntimeError(
+            "❌ [Qwen3-TTS] Model class is not loaded because the 'qwen_tts' package failed to import. "
+            "Please check the ComfyUI console for the detailed 'Critical Import Error' above."
+        )
 
     model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype, attn_implementation="flash_attention_2")
     
