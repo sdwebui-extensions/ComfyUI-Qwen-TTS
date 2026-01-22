@@ -2,5 +2,9 @@ torch
 torchaudio
 transformers
 librosa
+soundfile
 accelerate
 numpy
+einops
+tiktoken
+sentencepiece

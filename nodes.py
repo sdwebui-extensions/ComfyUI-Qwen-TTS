@@ -48,19 +48,23 @@ MODEL_FAMILY_TO_HF = {
     "1.7B": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
 }
 
-# Add qwen_tts to sys.path
+# Add current directory to sys.path to allow importing qwen_tts package
 current_dir = os.path.dirname(os.path.abspath(__file__))
-qwen_tts_path = os.path.join(current_dir, 'qwen_tts')
-if qwen_tts_path not in sys.path:
-    sys.path.insert(0, qwen_tts_path)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 try:
-    from qwen_tts import Qwen3TTSModel, VoiceClonePromptItem
-except ImportError as e:
-    print(f"❌ Failed to import Qwen3-TTS: {e}")
-    print("Please ensure the qwen_tts package is correctly installed.")
-    Qwen3TTSModel = None
-    VoiceClonePromptItem = None
+    from .qwen_tts import Qwen3TTSModel, VoiceClonePromptItem
+except (ImportError, ValueError):
+    try:
+        from qwen_tts import Qwen3TTSModel, VoiceClonePromptItem
+    except ImportError as e:
+        import traceback
+        print(f"❌ Failed to import Qwen3-TTS: {e}")
+        traceback.print_exc()
+        print("Please ensure the qwen_tts package is present and all dependencies (transformers, torch, librosa, soundfile) are installed.")
+        Qwen3TTSModel = None
+        VoiceClonePromptItem = None
 
 
 # Global model cache
