@@ -48,6 +48,18 @@ MODEL_FAMILY_TO_HF = {
     "1.7B": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
 }
 
+# All required models for batch download
+ALL_MODELS = [
+    "Qwen/Qwen3-TTS-Tokenizer-12Hz",
+    "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+    "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+    "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+]
+
+_MODELS_CHECKED = False
+
 # Handle qwen_tts package import
 current_dir = os.path.dirname(os.path.abspath(__file__))
 qwen_tts_dir = os.path.join(current_dir, "qwen_tts")
@@ -83,9 +95,48 @@ except (ImportError, ValueError):
 # Global model cache
 _MODEL_CACHE = {}
 
+def check_and_download_models():
+    """Check for local models and trigger batch download if missing"""
+    global _MODELS_CHECKED
+    if _MODELS_CHECKED:
+        return
+    
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # ComfyUI root search
+    comfy_models_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "models")
+    qwen_root = os.path.join(comfy_models_path, "qwen-tts")
+    os.makedirs(qwen_root, exist_ok=True)
+
+    # Check if any model directory looks like it was downloaded
+    local_dirs = os.listdir(qwen_root) if os.path.exists(qwen_root) else []
+    
+    # If the folder is empty or has only trivial files, trigger download
+    if not any(os.path.isdir(os.path.join(qwen_root, d)) for d in local_dirs):
+        print("\n📥 [Qwen3-TTS] First run detected. Models are missing in 'models/qwen-tts'.")
+        print("   Starting batch download of all models (approx. 6GB). This may take several minutes...")
+        
+        try:
+            from huggingface_hub import snapshot_download
+            for model_id in ALL_MODELS:
+                folder_name = model_id.split("/")[-1]
+                target_dir = os.path.join(qwen_root, folder_name)
+                if not os.path.exists(target_dir):
+                    print(f"   Downloading {model_id}...")
+                    snapshot_download(repo_id=model_id, local_dir=target_dir)
+            print("✅ [Qwen3-TTS] All models downloaded successfully.\n")
+        except ImportError:
+            print("⚠️ [Qwen3-TTS] 'huggingface_hub' not found. Please install it to use auto-download.")
+        except Exception as e:
+            print(f"❌ [Qwen3-TTS] Failed to download models: {e}")
+    
+    _MODELS_CHECKED = True
+
 def load_qwen_model(model_type: str, model_choice: str, device: str, precision: str):
     """Shared model loading logic with caching and local path priority"""
     global _MODEL_CACHE
+    
+    # Check and trigger download on first run
+    check_and_download_models()
     
     # Determine device
     if device == "auto":
@@ -173,12 +224,6 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
     
     _MODEL_CACHE[cache_key] = model
     return model
-
-
-
-    
-    
-
 
 class VoiceDesignNode:
     """
