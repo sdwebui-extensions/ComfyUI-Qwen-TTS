@@ -17,21 +17,21 @@ from .nodes import (
     CustomVoiceNode,
 )
 
-# Node mappings
+# 建议通过添加前缀来确保唯一性
 NODE_CLASS_MAPPINGS = {
-    "Qwen3TTSVoiceClone": VoiceCloneNode,
-    "Qwen3TTSVoiceDesign": VoiceDesignNode,
-    "Qwen3TTSCustomVoice": CustomVoiceNode,
+    "FB_Qwen3TTSVoiceClone": VoiceCloneNode,
+    "FB_Qwen3TTSVoiceDesign": VoiceDesignNode,
+    "FB_Qwen3TTSCustomVoice": CustomVoiceNode,
 }
 
-# Node display name mappings
+# 对应的显示名称映射也需要同步更新 Key
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Qwen3TTSVoiceClone": "Qwen3-TTS VoiceClone",
-    "Qwen3TTSVoiceDesign": "Qwen3-TTS VoiceDesign",
-    "Qwen3TTSCustomVoice": "Qwen3-TTS CustomVoice",
+    "FB_Qwen3TTSVoiceClone": "🎭 Qwen3-TTS VoiceClone",
+    "FB_Qwen3TTSVoiceDesign": "🎨 Qwen3-TTS VoiceDesign",
+    "FB_Qwen3TTSCustomVoice": "🎵 Qwen3-TTS CustomVoice",
 }
 
 # Version information
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 print(f"✅ ComfyUI-Qwen-TTS v{__version__} loaded")
