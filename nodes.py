@@ -519,7 +519,7 @@ class CustomVoiceNode:
                 "text": ("STRING", {"multiline": True, "default": "Hello world", "placeholder": "Enter text to synthesize"}),
                 "speaker": (["Aiden", "Dylan", "Eric", "Ono_anna", "Ryan", "Serena", "Sohee", "Uncle_fu", "Vivian"], {"default": "Ryan"}),
                 "model_choice": (["0.6B", "1.7B"], {"default": "1.7B"}),
-                "device": (["auto", "cuda", "cpu"], {"default": "auto"}),
+                "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
