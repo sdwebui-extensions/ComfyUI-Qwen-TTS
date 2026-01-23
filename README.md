@@ -8,9 +8,10 @@ ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, base
 
 ## 📋 Changelog
 
-### 2026-01-23 - Dependency Compatibility Fix
+### 2026-01-23 - Dependency Compatibility & Mac Support
 - **Fixed**: Resolved `transformers` version conflicts with `qwen-tts` dependency
 - **Improvement**: Now supports local package import without requiring `pip install qwen-tts`
+- **New**: Add MPS (Mac Apple Silicon) support for device detection
 - **Note**: The official `qwen-tts` package requires `transformers==4.57.3`, which may conflict with other ComfyUI nodes. This version uses bundled local code to avoid dependency issues.
 
 ## Key Features
