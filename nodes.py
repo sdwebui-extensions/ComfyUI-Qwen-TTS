@@ -146,7 +146,20 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
     
     # Determine device
     if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"  # 针对 Mac 的关键修复
+        else:
+            device = "cpu"
+    
+    # 强制 Mac 使用 float16 或 bfloat16 (MPS 跑 float32 会很慢)
+    if device == "mps" and precision == "bf16":
+        dtype = torch.bfloat16
+    elif device == "mps":
+        dtype = torch.float16
+    else:
+        dtype = torch.bfloat16 if precision == "bf16" else torch.float32
     
     # Set precision
     dtype = torch.bfloat16 if precision == "bf16" else torch.float32
@@ -249,7 +262,7 @@ class VoiceDesignNode:
                 "text": ("STRING", {"multiline": True, "default": "Hello, I am a custom voice created by description.", "placeholder": "Enter text to synthesize"}),
                 "instruct": ("STRING", {"multiline": True, "default": "A cute girl voice with a high pitch and expressive tone.", "placeholder": "Enter voice description"}),
                 "model_choice": (["1.7B"], {"default": "1.7B", "tooltip": "VoiceDesign only supports 1.7B models"}),
-                "device": (["auto", "cuda", "cpu"], {"default": "auto"}),
+                "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
@@ -311,7 +324,7 @@ class VoiceCloneNode:
                 "ref_text": ("STRING", {"multiline": True, "default": "", "placeholder": "Reference audio text (optional)"}),
                 "target_text": ("STRING", {"multiline": True, "default": "Good one. Okay, fine, I'm just gonna leave this sock monkey here. Goodbye."}),
                 "model_choice": (["0.6B", "1.7B"], {"default": "0.6B"}),
-                "device": (["auto", "cuda", "cpu"], {"default": "auto"}),
+                "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
