@@ -2,6 +2,7 @@
 name = "comfyui-qwen-tts"  # Unique identifier (immutable after creation)
 description = "ComfyUI custom nodes for speech synthesis, voice cloning, and voice design based on Qwen3-TTS"
 version = "1.0.0"  # Semantic versioning
+requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 dependencies = [
     "torch",
@@ -20,6 +21,6 @@ dependencies = [
 Repository = "https://github.com/flybirdxx/ComfyUI-Qwen-TTS"
 
 [tool.comfy]
-PublisherId = ""  # TODO: Fill in your Publisher ID from https://registry.comfy.org
+PublisherId = "flybirdxx"  # TODO: Fill in your Publisher ID from https://registry.comfy.org
 DisplayName = "Qwen3-TTS - Voice Synthesis & Cloning"
 Icon = "https://raw.githubusercontent.com/flybirdxx/ComfyUI-Qwen-TTS/main/example/qwen3-tts.png"
