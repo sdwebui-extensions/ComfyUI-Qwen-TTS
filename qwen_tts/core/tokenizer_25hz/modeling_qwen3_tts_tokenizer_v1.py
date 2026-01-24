@@ -25,6 +25,9 @@ from torch.nn import Parameter
 from torch.nn import functional as F
 from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from transformers.utils import ModelOutput, auto_docstring, logging
+# Redefine auto_docstring to bypass transformers bug
+auto_docstring = lambda x: x
+
 from transformers.utils.hub import cached_file
 
 from torch.nn.utils.rnn import pad_sequence
