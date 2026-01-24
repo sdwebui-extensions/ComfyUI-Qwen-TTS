@@ -59,6 +59,7 @@ ALL_MODELS = [
 ]
 
 _MODELS_CHECKED = False
+_MODEL_CACHE = {}
 
 # Handle qwen_tts package import
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -97,8 +98,70 @@ except ImportError:
         VoiceClonePromptItem = None
 
 
-# Global model cache
-_MODEL_CACHE = {}
+ATTENTION_OPTIONS = ["auto", "sage_attn", "flash_attn", "sdpa", "eager"]
+
+def check_attention_implementation():
+    """Check available attention implementations and return in priority order."""
+    available = []
+    
+    try:
+        from sageattention import sageattn
+        available.append("sage_attn")
+        print(f"✅ [Qwen3-TTS] sage_attn available (sageattention package)")
+    except ImportError:
+        pass
+    
+    try:
+        import flash_attn
+        available.append("flash_attn")
+        print(f"✅ [Qwen3-TTS] flash_attn available")
+    except ImportError:
+        pass
+    
+    available.append("sdpa")
+    print(f"✅ [Qwen3-TTS] sdpa available (PyTorch built-in)")
+    
+    available.append("eager")
+    print(f"✅ [Qwen3-TTS] eager attention available (always available)")
+    
+    return available
+
+def get_attention_implementation(selection: str) -> str:
+    """Get the actual attention implementation based on selection and availability."""
+    available = check_attention_implementation()
+    
+    if selection == "auto":
+        priority = ["sage_attn", "flash_attn", "sdpa", "eager"]
+        for attn in priority:
+            if attn in available:
+                print(f"🔍 [Qwen3-TTS] Auto-selected attention: {attn}")
+                return attn
+        return "eager"
+    else:
+        if selection in available:
+            print(f"🔍 [Qwen3-TTS] Using requested attention: {selection}")
+            return selection
+        else:
+            print(f"⚠️ [Qwen3-TTS] Requested attention '{selection}' not available, falling back to sdpa")
+            if "sdpa" in available:
+                return "sdpa"
+            return "eager"
+
+
+def unload_cached_model():
+    """Unload all cached models and clear GPU memory."""
+    global _MODEL_CACHE
+    if _MODEL_CACHE:
+        print(f"🗑️ [Qwen3-TTS] Unloading {_MODEL_CACHE.__len__()} cached model(s)...")
+        _MODEL_CACHE.clear()
+    
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+    
+    import gc
+    gc.collect()
+    print(f"✅ [Qwen3-TTS] Model cache and GPU memory cleared")
 
 
 def apply_qwen3_patches(model):
@@ -194,9 +257,15 @@ def check_and_download_tokenizer():
     _MODELS_CHECKED = True
 
 
-def load_qwen_model(model_type: str, model_choice: str, device: str, precision: str):
+def load_qwen_model(model_type: str, model_choice: str, device: str, precision: str, attention: str = "auto", unload_after: bool = False, previous_attention: str = None):
     """Shared model loading logic with caching and local path priority"""
     global _MODEL_CACHE
+    
+    if previous_attention is not None and previous_attention != attention:
+        print(f"🔄 [Qwen3-TTS] Attention changed from '{previous_attention}' to '{attention}', clearing cache...")
+        unload_cached_model()
+    
+    attn_impl = get_attention_implementation(attention)
     
     # Check and download tokenizer (shared by all models)
     check_and_download_tokenizer()
@@ -225,8 +294,8 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
     if model_type == "VoiceDesign" and model_choice == "0.6B":
         raise RuntimeError("❌ VoiceDesign only supports 1.7B models!")
         
-    # Cache key
-    cache_key = (model_type, model_choice, device, precision)
+    # Cache key includes attention implementation
+    cache_key = (model_type, model_choice, device, precision, attn_impl)
     if cache_key in _MODEL_CACHE:
         return _MODEL_CACHE[cache_key]
     
@@ -307,18 +376,83 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
             "Please check the ComfyUI console for the detailed 'Critical Import Error' above."
         )
 
-    # Try to use flash_attention_2 if available, otherwise fall back to default
-    try:
-        model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype, attn_implementation="flash_attention_2")
-    except (ImportError, ValueError, Exception) as e:
-        # flash_attention_2 not available or not supported, use default attention
-        print(f"⚠️ [Qwen3-TTS] flash_attention_2 not available, using default attention: {e}")
-        model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype)
+    # Map attention implementation to model loading parameter
+    attn_param = None
+    use_sage_attn = False
+    
+    if attn_impl == "flash_attn":
+        attn_param = "flash_attention_2"
+    elif attn_impl == "sage_attn":
+        use_sage_attn = True
+    elif attn_impl == "sdpa":
+        attn_param = "sdpa"
+    elif attn_impl == "eager":
+        attn_param = "eager"
+    
+    # Handle sage_attn (sageattention package)
+    if use_sage_attn:
+        try:
+            from sageattention import sageattn
+            print(f"🔧 [Qwen3-TTS] Loading model with sage_attn (sageattention)")
+            
+            model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype)
+            
+            # Patch attention modules to use sageattention
+            patched_count = 0
+            for name, module in model.model.named_modules():
+                if hasattr(module, 'forward') and 'Attention' in type(module).__name__ or 'attn' in name.lower():
+                    try:
+                        original_forward = module.forward
+                        def make_sage_forward(orig_forward, mod):
+                            def sage_forward(*args, **kwargs):
+                                # Extract q, k, v from attention call
+                                if len(args) >= 3:
+                                    q, k, v = args[0], args[1], args[2]
+                                else:
+                                    return orig_forward(*args, **kwargs)
+                                
+                                # Handle attention_mask
+                                attn_mask = kwargs.get('attention_mask', None)
+                                
+                                # Call sageattention
+                                out = sageattn(q, k, v, is_causal=False, attn_mask=attn_mask)
+                                return out
+                            return sage_forward
+                        
+                        module.forward = make_sage_forward(original_forward, module)
+                        patched_count += 1
+                    except Exception:
+                        pass
+            
+            print(f"🔧 [Qwen3-TTS] Patched {patched_count} attention modules with sage_attn")
+            
+        except (ImportError, Exception) as e:
+            print(f"⚠️ [Qwen3-TTS] Failed with sage_attn, falling back to default attention: {e}")
+            model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype)
+    else:
+        try:
+            if attn_param:
+                print(f"🔧 [Qwen3-TTS] Loading model with attention: {attn_impl}")
+                model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype, attn_implementation=attn_param)
+            else:
+                print(f"🔧 [Qwen3-TTS] Loading model with attention: {attn_impl}")
+                model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype)
+        except (ImportError, ValueError, Exception) as e:
+            print(f"⚠️ [Qwen3-TTS] Failed with {attn_impl}, falling back to default attention: {e}")
+            model = Qwen3TTSModel.from_pretrained(final_source, device_map=device, dtype=dtype)
     
     # Apply patches
     apply_qwen3_patches(model)
     
     _MODEL_CACHE[cache_key] = model
+    
+    if unload_after:
+        def unload_callback():
+            unload_cached_model()
+        model._unload_callback = unload_callback
+    else:
+        model._unload_callback = None
+    
     return model
 
 class VoiceDesignNode:
@@ -330,20 +464,23 @@ class VoiceDesignNode:
     def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
-                "text": ("STRING", {"multiline": True, "default": "Hello, I am a custom voice created by description.", "placeholder": "Enter text to synthesize"}),
-                "instruct": ("STRING", {"multiline": True, "default": "A cute girl voice with a high pitch and expressive tone.", "placeholder": "Enter voice description"}),
-                "model_choice": (["1.7B"], {"default": "1.7B", "tooltip": "VoiceDesign only supports 1.7B models"}),
+                "text": ("STRING", {"multiline": True, "default": "Hello world", "placeholder": "Enter text to synthesize"}),
+                "speaker": (["Aiden", "Dylan", "Eric", "Ono_anna", "Ryan", "Serena", "Sohee", "Uncle_fu", "Vivian"], {"default": "Ryan"}),
+                "model_choice": (["0.6B", "1.7B"], {"default": "1.7B"}),
                 "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
+                "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
             "optional": {
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "instruct": ("STRING", {"multiline": True, "default": "", "placeholder": "Style instruction (optional)"}),
                 "max_new_tokens": ("INT", {"default": 2048, "min": 512, "max": 4096, "step": 256}),
                 "top_p": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Nucleus sampling probability"}),
                 "top_k": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1, "tooltip": "Top-k sampling parameter"}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 2.0, "step": 0.1, "tooltip": "Sampling temperature"}),
                 "repetition_penalty": ("FLOAT", {"default": 1.05, "min": 1.0, "max": 2.0, "step": 0.05, "tooltip": "Penalty for repetition"}),
+                "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
             }
         }
 
@@ -353,12 +490,20 @@ class VoiceDesignNode:
     CATEGORY = "Qwen3-TTS"
     DESCRIPTION = "VoiceDesign: Generate custom voices from descriptions."
 
-    def generate(self, text: str, instruct: str, model_choice: str, device: str, precision: str, language: str, seed: int = 0, max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05) -> Tuple[Dict[str, Any]]:
+    def generate(self, text: str, instruct: str, model_choice: str, device: str, precision: str, attention: str, language: str, seed: int = 0, max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05, unload_model_after_generate: bool = False) -> Tuple[Dict[str, Any]]:
         if not text or not instruct:
             raise RuntimeError("Text and instruction description are required")
 
+        # Track previous attention for cache invalidation
+        global _MODEL_CACHE
+        previous_attention = None
+        for key in _MODEL_CACHE:
+            if key[0] == "VoiceDesign":
+                previous_attention = key[4] if len(key) > 4 else None
+                break
+
         # Load model
-        model = load_qwen_model("VoiceDesign", model_choice, device, precision)
+        model = load_qwen_model("VoiceDesign", model_choice, device, precision, attention, unload_model_after_generate, previous_attention)
 
         # Set random seeds
         torch.manual_seed(seed)
@@ -386,6 +531,11 @@ class VoiceDesignNode:
                 waveform = waveform.squeeze()
             waveform = waveform.unsqueeze(0).unsqueeze(0)
             audio_data = {"waveform": waveform, "sample_rate": sr}
+            
+            # Unload model if requested
+            if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+                model._unload_callback()
+            
             return (audio_data,)
         raise RuntimeError("Invalid audio data generated")
 
@@ -403,6 +553,7 @@ class VoiceCloneNode:
                 "model_choice": (["0.6B", "1.7B"], {"default": "0.6B"}),
                 "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
+                "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
             "optional": {
@@ -416,6 +567,7 @@ class VoiceCloneNode:
                 "top_k": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1, "tooltip": "Top-k sampling parameter"}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 2.0, "step": 0.1, "tooltip": "Sampling temperature"}),
                 "repetition_penalty": ("FLOAT", {"default": 1.05, "min": 1.0, "max": 2.0, "step": 0.05, "tooltip": "Penalty for repetition"}),
+                "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
             }
         }
 
@@ -507,16 +659,25 @@ class VoiceCloneNode:
         # Return as tuple (waveform, sr) with 1-D numpy waveform as expected by the tokenizer
         return (waveform, int(sr))
 
-    def generate(self, target_text: str, model_choice: str, device: str, precision: str, language: str, 
+    def generate(self, target_text: str, model_choice: str, device: str, precision: str, attention: str, language: str, 
                  ref_audio: Optional[Dict[str, Any]] = None, ref_text: str = "", 
                  voice_clone_prompt: Optional[Any] = None, seed: int = 0, 
                  x_vector_only: bool = False, max_new_tokens: int = 2048,
-                 top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05) -> Tuple[Dict[str, Any]]:
+                 top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05,
+                 unload_model_after_generate: bool = False) -> Tuple[Dict[str, Any]]:
         if ref_audio is None and voice_clone_prompt is None:
             raise RuntimeError("Either reference audio or voice clone prompt is required")
         
+        # Track previous attention for cache invalidation
+        global _MODEL_CACHE
+        previous_attention = None
+        for key in _MODEL_CACHE:
+            if key[0] == "Base":
+                previous_attention = key[4] if len(key) > 4 else None
+                break
+        
         # Load model
-        model = load_qwen_model("Base", model_choice, device, precision)
+        model = load_qwen_model("Base", model_choice, device, precision, attention, unload_model_after_generate, previous_attention)
 
         # Set random seeds
         torch.manual_seed(seed)
@@ -569,8 +730,13 @@ class VoiceCloneNode:
             # Convert to ComfyUI format: [batch, channels, samples]
             waveform = waveform.unsqueeze(0).unsqueeze(0)
             audio_data = {"waveform": waveform, "sample_rate": sr}
+            
+            # Unload model if requested
+            if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+                model._unload_callback()
+            
             return (audio_data,)
-        
+        raise RuntimeError("Invalid audio data generated")
 
 
 class CustomVoiceNode:
@@ -587,6 +753,7 @@ class CustomVoiceNode:
                 "model_choice": (["0.6B", "1.7B"], {"default": "1.7B"}),
                 "device": (["auto", "cuda","mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
+                "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
             },
             "optional": {
@@ -597,6 +764,7 @@ class CustomVoiceNode:
                 "top_k": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1, "tooltip": "Top-k sampling parameter"}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 2.0, "step": 0.1, "tooltip": "Sampling temperature"}),
                 "repetition_penalty": ("FLOAT", {"default": 1.05, "min": 1.0, "max": 2.0, "step": 0.05, "tooltip": "Penalty for repetition"}),
+                "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
             }
         }
 
@@ -606,12 +774,20 @@ class CustomVoiceNode:
     CATEGORY = "Qwen3-TTS"
     DESCRIPTION = "CustomVoice: Generate speech using preset speakers."
 
-    def generate(self, text: str, speaker: str, model_choice: str, device: str, precision: str, language: str, seed: int = 0, instruct: str = "", max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05) -> Tuple[Dict[str, Any]]:
+    def generate(self, text: str, speaker: str, model_choice: str, device: str, precision: str, attention: str, language: str, seed: int = 0, instruct: str = "", max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05, unload_model_after_generate: bool = False) -> Tuple[Dict[str, Any]]:
         if not text or not speaker:
             raise RuntimeError("Text and speaker are required")
+
+        # Track previous attention for cache invalidation
+        global _MODEL_CACHE
+        previous_attention = None
+        for key in _MODEL_CACHE:
+            if key[0] == "CustomVoice":
+                previous_attention = key[4] if len(key) > 4 else None
+                break
         
         # Load model
-        model = load_qwen_model("CustomVoice", model_choice, device, precision)
+        model = load_qwen_model("CustomVoice", model_choice, device, precision, attention, unload_model_after_generate, previous_attention)
 
         # Set random seeds
         torch.manual_seed(seed)
@@ -641,6 +817,11 @@ class CustomVoiceNode:
             # Convert to ComfyUI format: [batch, channels, samples]
             waveform = waveform.unsqueeze(0).unsqueeze(0)
             audio_data = {"waveform": waveform, "sample_rate": sr}
+            
+            # Unload model if requested
+            if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+                model._unload_callback()
+            
             return (audio_data,)
         raise RuntimeError("Invalid audio data generated")
 
@@ -659,9 +840,11 @@ class VoiceClonePromptNode:
                 "model_choice": (["0.6B", "1.7B"], {"default": "0.6B"}),
                 "device": (["auto", "cuda", "mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
+                "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
             },
             "optional": {
                 "x_vector_only": ("BOOLEAN", {"default": False, "tooltip": "If True, only speaker embedding is extracted (ref_text not needed)"}),
+                "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
             }
         }
 
@@ -671,12 +854,20 @@ class VoiceClonePromptNode:
     CATEGORY = "Qwen3-TTS"
     DESCRIPTION = "VoiceClonePrompt: Extract and cache voice features for reuse in VoiceClone node."
 
-    def create_prompt(self, ref_audio: Dict[str, Any], ref_text: str, model_choice: str, device: str, precision: str, x_vector_only: bool = False) -> Tuple[Any]:
+    def create_prompt(self, ref_audio: Dict[str, Any], ref_text: str, model_choice: str, device: str, precision: str, attention: str, x_vector_only: bool = False, unload_model_after_generate: bool = False) -> Tuple[Any]:
         if ref_audio is None:
             raise RuntimeError("Reference audio is required")
         
+        # Track previous attention for cache invalidation
+        global _MODEL_CACHE
+        previous_attention = None
+        for key in _MODEL_CACHE:
+            if key[0] == "Base":
+                previous_attention = key[4] if len(key) > 4 else None
+                break
+        
         # Load model (usually Base model)
-        model = load_qwen_model("Base", model_choice, device, precision)
+        model = load_qwen_model("Base", model_choice, device, precision, attention, unload_model_after_generate, previous_attention)
 
         # Reuse VoiceCloneNode's audio parsing logic
         vcn = VoiceCloneNode()
@@ -688,6 +879,10 @@ class VoiceClonePromptNode:
             ref_text=ref_text if ref_text and ref_text.strip() else None,
             x_vector_only_mode=x_vector_only,
         )
+
+        # Unload model if requested
+        if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+            model._unload_callback()
 
         return (prompt_items,)
 
@@ -739,6 +934,7 @@ class DialogueInferenceNode:
                 "model_choice": (["0.6B", "1.7B"], {"default": "1.7B"}),
                 "device": (["auto", "cuda", "mps", "cpu"], {"default": "auto"}),
                 "precision": (["bf16", "fp32"], {"default": "bf16"}),
+                "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
                 "language": (DEMO_LANGUAGES, {"default": "Auto"}),
                 "pause_seconds": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 5.0, "step": 0.1, "tooltip": "Silence duration between sentences"}),
                 "merge_outputs": ("BOOLEAN", {"default": True, "tooltip": "Merge all dialogue segments into a single long audio"}),
@@ -751,6 +947,7 @@ class DialogueInferenceNode:
                 "top_k": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1, "tooltip": "Top-k sampling parameter"}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 2.0, "step": 0.1, "tooltip": "Sampling temperature"}),
                 "repetition_penalty": ("FLOAT", {"default": 1.05, "min": 1.0, "max": 2.0, "step": 0.05, "tooltip": "Penalty for repetition"}),
+                "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
             }
         }
 
@@ -760,12 +957,20 @@ class DialogueInferenceNode:
     CATEGORY = "Qwen3-TTS"
     DESCRIPTION = "DialogueInference: Execute a script with multiple roles and generate continuous speech."
 
-    def generate_dialogue(self, script: str, role_bank: Dict[str, Any], model_choice: str, device: str, precision: str, language: str, pause_seconds: float, merge_outputs: bool, batch_size: int, seed: int = 0, max_new_tokens_per_line: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05) -> Tuple[Dict[str, Any]]:
+    def generate_dialogue(self, script: str, role_bank: Dict[str, Any], model_choice: str, device: str, precision: str, attention: str, language: str, pause_seconds: float, merge_outputs: bool, batch_size: int, seed: int = 0, max_new_tokens_per_line: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05, unload_model_after_generate: bool = False) -> Tuple[Dict[str, Any]]:
         if not script or not role_bank:
             raise RuntimeError("Script and Role Bank are required")
 
+        # Track previous attention for cache invalidation
+        global _MODEL_CACHE
+        previous_attention = None
+        for key in _MODEL_CACHE:
+            if key[0] == "Base":
+                previous_attention = key[4] if len(key) > 4 else None
+                break
+
         # Load model
-        model = load_qwen_model("Base", model_choice, device, precision)
+        model = load_qwen_model("Base", model_choice, device, precision, attention, unload_model_after_generate, previous_attention)
 
         # Set random seeds
         torch.manual_seed(seed)
@@ -879,6 +1084,11 @@ class DialogueInferenceNode:
             # Concatenate along the sample dimension (last one)
             merged_waveform = torch.cat(results, dim=-1)
             audio_data = {"waveform": merged_waveform, "sample_rate": sr}
+            
+            # Unload model if requested
+            if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+                model._unload_callback()
+            
             return (audio_data,)
         else:
             # Pad to longest for batch format
@@ -893,4 +1103,9 @@ class DialogueInferenceNode:
             
             batched_waveform = torch.cat(padded_results, dim=0)
             audio_data = {"waveform": batched_waveform, "sample_rate": sr}
+            
+            # Unload model if requested
+            if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
+                model._unload_callback()
+            
             return (audio_data,)

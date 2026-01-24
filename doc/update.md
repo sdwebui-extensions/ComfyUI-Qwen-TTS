@@ -13,6 +13,51 @@
 - `temperature` (0.1-2.0, default 1.0): Sampling temperature (higher = more random)
 - `repetition_penalty` (1.0-2.0, default 1.05): Penalty to reduce repeated tokens
 
+### Added Attention Mechanism Selection
+- Added `attention` parameter dropdown to all TTS nodes with options: auto, sage_attn, flash_attn, sdpa, eager
+- Implements automatic detection of best available attention mechanism
+- Provides graceful fallback when requested attention is unavailable
+- Console logging shows which attention mechanism is being used
+
+**Available Attention Mechanisms:**
+- `sage_attn`: SAGE attention (fastest, requires installation)
+- `flash_attn`: Flash Attention 2 (fast, requires installation)
+- `sdpa`: Scaled Dot Product Attention (PyTorch built-in, medium speed)
+- `eager`: Standard attention (always available, slowest)
+- `auto`: Automatically selects best available option (recommended)
+
+**Auto-Detection Priority:**
+When `attention: "auto"` is selected, checks in this order:
+1. sage_attn → if installed
+2. flash_attn → if installed
+3. sdpa → always available
+4. eager → always available (fallback)
+
+**Graceful Fallback:**
+If requested attention is unavailable, falls back to sdpa → eager with console warning.
+
+**Model Caching:**
+- Cache key includes attention implementation to prevent cross-contamination
+- Changing attention mechanism automatically clears cache and reloads model
+- Same model with different attention mechanisms coexists in cache
+
+### Added Model Memory Management
+- Added `unload_model_after_generate` toggle to all TTS nodes
+- Enables model cache clearing and GPU memory freeing after generation
+- Clears model cache (`_MODEL_CACHE.clear()`)
+- Empties GPU memory (`torch.cuda.empty_cache()`)
+- Synchronizes CUDA operations (`torch.cuda.synchronize()`)
+- Runs garbage collection (`gc.collect()`)
+
+**Use Cases:**
+- Users with limited VRAM (< 8GB) to free memory after generation
+- Running multiple different models sequentially
+- Freeing memory after generation completes
+
+**Bug Fix:**
+- Fixed missing `_MODEL_CACHE` initialization at module level
+- Added `_MODEL_CACHE = {}` after line 61 in `nodes.py`
+
 ### Bug Fixes
 - Fixed `check_model_inputs()` TypeError caused by decorator usage in `transformers==4.57.0`
 - Removed parentheses from `@check_model_inputs` decorator in `modeling_qwen3_tts_tokenizer_v2.py`
