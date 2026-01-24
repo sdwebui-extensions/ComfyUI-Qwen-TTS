@@ -37,20 +37,21 @@ from transformers.modeling_outputs import BaseModelOutputWithPast
 from transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
 from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from transformers.processing_utils import Unpack
-from transformers.utils import ModelOutput, auto_docstring, logging
+from transformers.utils import ModelOutput, logging
 # Redefine auto_docstring to bypass transformers bug and handle custom_intro parameter
-def auto_docstring(custom_intro=None):
+def auto_docstring(obj=None, *, custom_intro=None, custom_args=None, checkpoint=None):
     """
     Decorator that handles docstring auto-generation.
     Can be used with or without parameters.
+    Matches the signature of transformers.utils.auto_docstring
     """
     def decorator(cls_or_func):
         return cls_or_func
 
     # If called without parentheses (as a bare decorator)
-    if custom_intro is not None and callable(custom_intro):
-        # custom_intro is actually the function/class being decorated
-        return custom_intro
+    if obj is not None:
+        # obj is the function/class being decorated
+        return obj
     else:
         # Called with parentheses, return the decorator
         return decorator
