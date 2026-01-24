@@ -24,9 +24,23 @@ from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
-from transformers.utils import ModelOutput, auto_docstring, logging
-# Redefine auto_docstring to bypass transformers bug
-auto_docstring = lambda x: x
+from transformers.utils import ModelOutput, logging
+# Redefine auto_docstring to bypass transformers bug and handle custom_intro parameter
+def auto_docstring(custom_intro=None):
+    """
+    Decorator that handles docstring auto-generation.
+    Can be used with or without parameters.
+    """
+    def decorator(cls_or_func):
+        return cls_or_func
+
+    # If called without parentheses (as a bare decorator)
+    if custom_intro is not None and callable(custom_intro):
+        # custom_intro is actually the function/class being decorated
+        return custom_intro
+    else:
+        # Called with parentheses, return the decorator
+        return decorator
 
 from transformers.utils.hub import cached_file
 
@@ -549,7 +563,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
             The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
             sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
             that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
-            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            k have the shape [batch_size, heads, seq_len, head_dim], then set unsqueeze_dim=1 makes
             cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
             the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
     Returns:
