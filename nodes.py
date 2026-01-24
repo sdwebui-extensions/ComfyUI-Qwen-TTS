@@ -152,8 +152,31 @@ def apply_qwen3_patches(model):
         print(f"⚠️ [Qwen3-TTS] Failed to apply audio normalization patch: {e}")
 
 
-def check_and_download_models():
-    """Check for local models and trigger batch download if missing"""
+def download_model_if_needed(model_id: str, qwen_root: str) -> str:
+    """Download a specific model if not found locally"""
+    folder_name = model_id.split("/")[-1]
+    target_dir = os.path.join(qwen_root, folder_name)
+    
+    if os.path.exists(target_dir) and os.path.isdir(target_dir):
+        # Model already exists
+        return target_dir
+    
+    print(f"\n📥 [Qwen3-TTS] Downloading {model_id}...")
+    try:
+        from huggingface_hub import snapshot_download
+        snapshot_download(repo_id=model_id, local_dir=target_dir)
+        print(f"✅ [Qwen3-TTS] {folder_name} downloaded successfully.\n")
+        return target_dir
+    except ImportError:
+        print("⚠️ [Qwen3-TTS] 'huggingface_hub' not found. Please install it to use auto-download.")
+        return None
+    except Exception as e:
+        print(f"❌ [Qwen3-TTS] Failed to download {model_id}: {e}")
+        return None
+
+
+def check_and_download_tokenizer():
+    """Check and download tokenizer (shared by all models)"""
     global _MODELS_CHECKED
     if _MODELS_CHECKED:
         return
@@ -164,36 +187,19 @@ def check_and_download_models():
     qwen_root = os.path.join(comfy_models_path, "qwen-tts")
     os.makedirs(qwen_root, exist_ok=True)
 
-    # Check if any model directory looks like it was downloaded
-    local_dirs = os.listdir(qwen_root) if os.path.exists(qwen_root) else []
-    
-    # If the folder is empty or has only trivial files, trigger download
-    if not any(os.path.isdir(os.path.join(qwen_root, d)) for d in local_dirs):
-        print("\n📥 [Qwen3-TTS] First run detected. Models are missing in 'models/qwen-tts'.")
-        print("   Starting batch download of all models (approx. 6GB). This may take several minutes...")
-        
-        try:
-            from huggingface_hub import snapshot_download
-            for model_id in ALL_MODELS:
-                folder_name = model_id.split("/")[-1]
-                target_dir = os.path.join(qwen_root, folder_name)
-                if not os.path.exists(target_dir):
-                    print(f"   Downloading {model_id}...")
-                    snapshot_download(repo_id=model_id, local_dir=target_dir)
-            print("✅ [Qwen3-TTS] All models downloaded successfully.\n")
-        except ImportError:
-            print("⚠️ [Qwen3-TTS] 'huggingface_hub' not found. Please install it to use auto-download.")
-        except Exception as e:
-            print(f"❌ [Qwen3-TTS] Failed to download models: {e}")
+    # Download tokenizer (required by all models)
+    tokenizer_id = "Qwen/Qwen3-TTS-Tokenizer-12Hz"
+    download_model_if_needed(tokenizer_id, qwen_root)
     
     _MODELS_CHECKED = True
+
 
 def load_qwen_model(model_type: str, model_choice: str, device: str, precision: str):
     """Shared model loading logic with caching and local path priority"""
     global _MODEL_CACHE
     
-    # Check and trigger download on first run
-    check_and_download_models()
+    # Check and download tokenizer (shared by all models)
+    check_and_download_tokenizer()
     
     # Determine device
     if device == "auto":
@@ -282,7 +288,18 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
         final_source = found_local
         print(f"✅ [Qwen3-TTS] Loading local model: {os.path.basename(final_source)}")
     else:
-        print(f"🌐 [Qwen3-TTS] Loading remote model: {final_source}")
+        # Try to download the specific model if not found locally
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        comfy_models_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "models")
+        qwen_root = os.path.join(comfy_models_path, "qwen-tts")
+        
+        downloaded_path = download_model_if_needed(final_source, qwen_root)
+        if downloaded_path:
+            final_source = downloaded_path
+            print(f"✅ [Qwen3-TTS] Loading downloaded model: {os.path.basename(final_source)}")
+        else:
+            # Fall back to remote loading if download failed
+            print(f"🌐 [Qwen3-TTS] Loading remote model: {final_source}")
 
     if Qwen3TTSModel is None:
         raise RuntimeError(
