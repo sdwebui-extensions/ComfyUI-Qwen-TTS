@@ -1,8 +1,8 @@
 {
   "id": "cd732cf0-c62d-4c2d-998a-e0e40c8464c5",
   "revision": 0,
-  "last_node_id": 67,
-  "last_link_id": 81,
+  "last_node_id": 68,
+  "last_link_id": 83,
   "nodes": [
     {
       "id": 63,
@@ -74,7 +74,7 @@
       ],
       "size": [
         400,
-        200
+        232
       ],
       "flags": {},
       "order": 3,
@@ -123,12 +123,31 @@
           "link": null
         },
         {
+          "label": "attention",
+          "name": "attention",
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
           "label": "x_vector_only",
           "name": "x_vector_only",
           "shape": 7,
           "type": "BOOLEAN",
           "widget": {
             "name": "x_vector_only"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
           },
           "link": null
         }
@@ -154,6 +173,8 @@
         "1.7B",
         "auto",
         "bf16",
+        false,
+        false,
         false
       ]
     },
@@ -166,7 +187,7 @@
       ],
       "size": [
         400,
-        200
+        232
       ],
       "flags": {},
       "order": 5,
@@ -215,12 +236,31 @@
           "link": null
         },
         {
+          "label": "attention",
+          "name": "attention",
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
           "label": "x_vector_only",
           "name": "x_vector_only",
           "shape": 7,
           "type": "BOOLEAN",
           "widget": {
             "name": "x_vector_only"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
           },
           "link": null
         }
@@ -246,6 +286,8 @@
         "1.7B",
         "auto",
         "bf16",
+        false,
+        false,
         false
       ]
     },
@@ -372,264 +414,6 @@
       "color": "rgba(38, 73, 116, 0.7)"
     },
     {
-      "id": 38,
-      "type": "FB_Qwen3TTSVoiceDesign",
-      "pos": [
-        -260,
-        -3510
-      ],
-      "size": [
-        410,
-        350
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "label": "text",
-          "name": "text",
-          "type": "STRING",
-          "widget": {
-            "name": "text"
-          },
-          "link": null
-        },
-        {
-          "label": "instruct",
-          "name": "instruct",
-          "type": "STRING",
-          "widget": {
-            "name": "instruct"
-          },
-          "link": null
-        },
-        {
-          "label": "model_choice",
-          "name": "model_choice",
-          "type": "COMBO",
-          "widget": {
-            "name": "model_choice"
-          },
-          "link": null
-        },
-        {
-          "label": "device",
-          "name": "device",
-          "type": "COMBO",
-          "widget": {
-            "name": "device"
-          },
-          "link": null
-        },
-        {
-          "label": "precision",
-          "name": "precision",
-          "type": "COMBO",
-          "widget": {
-            "name": "precision"
-          },
-          "link": null
-        },
-        {
-          "label": "language",
-          "name": "language",
-          "type": "COMBO",
-          "widget": {
-            "name": "language"
-          },
-          "link": null
-        },
-        {
-          "label": "seed",
-          "name": "seed",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "seed"
-          },
-          "link": null
-        },
-        {
-          "label": "max_new_tokens",
-          "name": "max_new_tokens",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "max_new_tokens"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "label": "audio",
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            63,
-            66
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "qwen3-tts-comfyui",
-        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
-        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
-        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
-        "enableTabs": false,
-        "tabWidth": 65,
-        "tabXOffset": 10,
-        "hasSecondTab": false,
-        "secondTabText": "Send Back",
-        "secondTabOffset": 80,
-        "secondTabWidth": 65,
-        "ue_properties": {
-          "widget_ue_connectable": {}
-        }
-      },
-      "widgets_values": [
-        "紧张什么？你连坐姿都在发抖……要不要靠过来一点？这里太吵了",
-        "模拟成熟性感的御姐音色，声音略带磁性且沉稳，语速不快不慢，语调充满自信和一丝挑逗，尾音可以稍微拖长并上扬，给人一种游刃有余的掌控感。",
-        "1.7B",
-        "auto",
-        "bf16",
-        "Chinese",
-        194743494784600,
-        "fixed",
-        2048
-      ]
-    },
-    {
-      "id": 55,
-      "type": "FB_Qwen3TTSVoiceDesign",
-      "pos": [
-        -260,
-        -2700
-      ],
-      "size": [
-        410,
-        320
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [
-        {
-          "label": "text",
-          "name": "text",
-          "type": "STRING",
-          "widget": {
-            "name": "text"
-          },
-          "link": null
-        },
-        {
-          "label": "instruct",
-          "name": "instruct",
-          "type": "STRING",
-          "widget": {
-            "name": "instruct"
-          },
-          "link": null
-        },
-        {
-          "label": "model_choice",
-          "name": "model_choice",
-          "type": "COMBO",
-          "widget": {
-            "name": "model_choice"
-          },
-          "link": null
-        },
-        {
-          "label": "device",
-          "name": "device",
-          "type": "COMBO",
-          "widget": {
-            "name": "device"
-          },
-          "link": null
-        },
-        {
-          "label": "precision",
-          "name": "precision",
-          "type": "COMBO",
-          "widget": {
-            "name": "precision"
-          },
-          "link": null
-        },
-        {
-          "label": "language",
-          "name": "language",
-          "type": "COMBO",
-          "widget": {
-            "name": "language"
-          },
-          "link": null
-        },
-        {
-          "label": "seed",
-          "name": "seed",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "seed"
-          },
-          "link": null
-        },
-        {
-          "label": "max_new_tokens",
-          "name": "max_new_tokens",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "max_new_tokens"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "label": "audio",
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            65,
-            68
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "qwen3-tts-comfyui",
-        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
-        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
-        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
-        "enableTabs": false,
-        "tabWidth": 65,
-        "tabXOffset": 10,
-        "hasSecondTab": false,
-        "secondTabText": "Send Back",
-        "secondTabOffset": 80,
-        "secondTabWidth": 65,
-        "ue_properties": {
-          "widget_ue_connectable": {}
-        }
-      },
-      "widgets_values": [
-        "小林今天第三次走神了。酒吧昏黄的灯光晃得他心跳加速，而吧台对面那个红唇微扬的女人，正用指尖轻轻摩挲着酒杯边缘",
-        "声音特征沉稳、客观、略带叙事感的女播音腔，普通话标准，语速适中，带有轻微的环境氛围渲染，语调平缓但富有感染力，在关键情节时稍作停顿，增强画面感。情感冷静旁观，偶尔带一丝微妙的反讽",
-        "1.7B",
-        "auto",
-        "bf16",
-        "Chinese",
-        238357790124060,
-        "fixed",
-        2048
-      ]
-    },
-    {
       "id": 60,
       "type": "SaveAudio",
       "pos": [
@@ -680,135 +464,6 @@
       ]
     },
     {
-      "id": 54,
-      "type": "FB_Qwen3TTSVoiceDesign",
-      "pos": [
-        -260,
-        -3110
-      ],
-      "size": [
-        420,
-        320
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "label": "text",
-          "name": "text",
-          "type": "STRING",
-          "widget": {
-            "name": "text"
-          },
-          "link": null
-        },
-        {
-          "label": "instruct",
-          "name": "instruct",
-          "type": "STRING",
-          "widget": {
-            "name": "instruct"
-          },
-          "link": null
-        },
-        {
-          "label": "model_choice",
-          "name": "model_choice",
-          "type": "COMBO",
-          "widget": {
-            "name": "model_choice"
-          },
-          "link": null
-        },
-        {
-          "label": "device",
-          "name": "device",
-          "type": "COMBO",
-          "widget": {
-            "name": "device"
-          },
-          "link": null
-        },
-        {
-          "label": "precision",
-          "name": "precision",
-          "type": "COMBO",
-          "widget": {
-            "name": "precision"
-          },
-          "link": null
-        },
-        {
-          "label": "language",
-          "name": "language",
-          "type": "COMBO",
-          "widget": {
-            "name": "language"
-          },
-          "link": null
-        },
-        {
-          "label": "seed",
-          "name": "seed",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "seed"
-          },
-          "link": null
-        },
-        {
-          "label": "max_new_tokens",
-          "name": "max_new_tokens",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "max_new_tokens"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "label": "audio",
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            64,
-            67
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "qwen3-tts-comfyui",
-        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
-        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
-        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
-        "enableTabs": false,
-        "tabWidth": 65,
-        "tabXOffset": 10,
-        "hasSecondTab": false,
-        "secondTabText": "Send Back",
-        "secondTabOffset": 80,
-        "secondTabWidth": 65,
-        "ue_properties": {
-          "widget_ue_connectable": {}
-        }
-      },
-      "widgets_values": [
-        "靠过去？可、可我们才第一次见面……你都不认识我……",
-        "25岁男性上班族，声音清亮但时常犹豫，语速时快时慢，紧张时会轻微结巴。情绪波动明显，从低声呢喃到突然激动再到自我怀疑的叹气。肢体语言丰富，经常无意识的小动作",
-        "1.7B",
-        "auto",
-        "bf16",
-        "Chinese",
-        489742050863978,
-        "fixed",
-        2048
-      ]
-    },
-    {
       "id": 57,
       "type": "FB_Qwen3TTSVoiceClonePrompt",
       "pos": [
@@ -817,7 +472,7 @@
       ],
       "size": [
         400,
-        200
+        232
       ],
       "flags": {},
       "order": 7,
@@ -866,12 +521,31 @@
           "link": null
         },
         {
+          "label": "attention",
+          "name": "attention",
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
           "label": "x_vector_only",
           "name": "x_vector_only",
           "shape": 7,
           "type": "BOOLEAN",
           "widget": {
             "name": "x_vector_only"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
           },
           "link": null
         }
@@ -897,6 +571,8 @@
         "1.7B",
         "auto",
         "bf16",
+        false,
+        false,
         false
       ]
     },
@@ -1058,7 +734,7 @@
           "name": "role_bank",
           "type": "QWEN3_ROLE_BANK",
           "links": [
-            80
+            82
           ]
         }
       ],
@@ -1179,19 +855,652 @@
       ]
     },
     {
-      "id": 67,
+      "id": 62,
+      "type": "SaveAudio",
+      "pos": [
+        1960,
+        -3270
+      ],
+      "size": [
+        270,
+        112
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "audio",
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 83
+        },
+        {
+          "label": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        },
+        {
+          "label": "audioUI",
+          "name": "audioUI",
+          "type": "AUDIO_UI",
+          "widget": {
+            "name": "audioUI"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.8.2",
+        "Node name for S&R": "SaveAudio"
+      },
+      "widgets_values": [
+        "audio/ComfyUI"
+      ]
+    },
+    {
+      "id": 38,
+      "type": "FB_Qwen3TTSVoiceDesign",
+      "pos": [
+        -260,
+        -3630
+      ],
+      "size": [
+        410,
+        454
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        },
+        {
+          "label": "instruct",
+          "name": "instruct",
+          "type": "STRING",
+          "widget": {
+            "name": "instruct"
+          },
+          "link": null
+        },
+        {
+          "label": "model_choice",
+          "name": "model_choice",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_choice"
+          },
+          "link": null
+        },
+        {
+          "label": "device",
+          "name": "device",
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        },
+        {
+          "label": "precision",
+          "name": "precision",
+          "type": "COMBO",
+          "widget": {
+            "name": "precision"
+          },
+          "link": null
+        },
+        {
+          "label": "language",
+          "name": "language",
+          "type": "COMBO",
+          "widget": {
+            "name": "language"
+          },
+          "link": null
+        },
+        {
+          "label": "seed",
+          "name": "seed",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "label": "max_new_tokens",
+          "name": "max_new_tokens",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "max_new_tokens"
+          },
+          "link": null
+        },
+        {
+          "label": "top_p",
+          "name": "top_p",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "top_p"
+          },
+          "link": null
+        },
+        {
+          "label": "top_k",
+          "name": "top_k",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "top_k"
+          },
+          "link": null
+        },
+        {
+          "label": "temperature",
+          "name": "temperature",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "temperature"
+          },
+          "link": null
+        },
+        {
+          "label": "repetition_penalty",
+          "name": "repetition_penalty",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "repetition_penalty"
+          },
+          "link": null
+        },
+        {
+          "label": "attention",
+          "name": "attention",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "audio",
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            63,
+            66
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "qwen3-tts-comfyui",
+        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
+        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
+        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "ue_properties": {
+          "widget_ue_connectable": {}
+        }
+      },
+      "widgets_values": [
+        "紧张什么？你连坐姿都在发抖……要不要靠过来一点？这里太吵了",
+        "模拟成熟性感的御姐音色，声音略带磁性且沉稳，语速不快不慢，语调充满自信和一丝挑逗，尾音可以稍微拖长并上扬，给人一种游刃有余的掌控感。",
+        "1.7B",
+        "auto",
+        "bf16",
+        "Chinese",
+        194743494784600,
+        "fixed",
+        2048,
+        0.8,
+        20,
+        1,
+        1.05,
+        "auto",
+        false
+      ]
+    },
+    {
+      "id": 55,
+      "type": "FB_Qwen3TTSVoiceDesign",
+      "pos": [
+        -280,
+        -2520
+      ],
+      "size": [
+        410,
+        454
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        },
+        {
+          "label": "instruct",
+          "name": "instruct",
+          "type": "STRING",
+          "widget": {
+            "name": "instruct"
+          },
+          "link": null
+        },
+        {
+          "label": "model_choice",
+          "name": "model_choice",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_choice"
+          },
+          "link": null
+        },
+        {
+          "label": "device",
+          "name": "device",
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        },
+        {
+          "label": "precision",
+          "name": "precision",
+          "type": "COMBO",
+          "widget": {
+            "name": "precision"
+          },
+          "link": null
+        },
+        {
+          "label": "language",
+          "name": "language",
+          "type": "COMBO",
+          "widget": {
+            "name": "language"
+          },
+          "link": null
+        },
+        {
+          "label": "seed",
+          "name": "seed",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "label": "max_new_tokens",
+          "name": "max_new_tokens",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "max_new_tokens"
+          },
+          "link": null
+        },
+        {
+          "label": "top_p",
+          "name": "top_p",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "top_p"
+          },
+          "link": null
+        },
+        {
+          "label": "top_k",
+          "name": "top_k",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "top_k"
+          },
+          "link": null
+        },
+        {
+          "label": "temperature",
+          "name": "temperature",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "temperature"
+          },
+          "link": null
+        },
+        {
+          "label": "repetition_penalty",
+          "name": "repetition_penalty",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "repetition_penalty"
+          },
+          "link": null
+        },
+        {
+          "label": "attention",
+          "name": "attention",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "audio",
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            65,
+            68
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "qwen3-tts-comfyui",
+        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
+        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
+        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "ue_properties": {
+          "widget_ue_connectable": {}
+        }
+      },
+      "widgets_values": [
+        "小林今天第三次走神了。酒吧昏黄的灯光晃得他心跳加速，而吧台对面那个红唇微扬的女人，正用指尖轻轻摩挲着酒杯边缘",
+        "声音特征沉稳、客观、略带叙事感的女播音腔，普通话标准，语速适中，带有轻微的环境氛围渲染，语调平缓但富有感染力，在关键情节时稍作停顿，增强画面感。情感冷静旁观，偶尔带一丝微妙的反讽",
+        "1.7B",
+        "auto",
+        "bf16",
+        "Chinese",
+        238357790124060,
+        "fixed",
+        2048,
+        0.8,
+        20,
+        1,
+        1.05,
+        "auto",
+        false
+      ]
+    },
+    {
+      "id": 54,
+      "type": "FB_Qwen3TTSVoiceDesign",
+      "pos": [
+        -280,
+        -3080
+      ],
+      "size": [
+        420,
+        454
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        },
+        {
+          "label": "instruct",
+          "name": "instruct",
+          "type": "STRING",
+          "widget": {
+            "name": "instruct"
+          },
+          "link": null
+        },
+        {
+          "label": "model_choice",
+          "name": "model_choice",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_choice"
+          },
+          "link": null
+        },
+        {
+          "label": "device",
+          "name": "device",
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        },
+        {
+          "label": "precision",
+          "name": "precision",
+          "type": "COMBO",
+          "widget": {
+            "name": "precision"
+          },
+          "link": null
+        },
+        {
+          "label": "language",
+          "name": "language",
+          "type": "COMBO",
+          "widget": {
+            "name": "language"
+          },
+          "link": null
+        },
+        {
+          "label": "seed",
+          "name": "seed",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "label": "max_new_tokens",
+          "name": "max_new_tokens",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "max_new_tokens"
+          },
+          "link": null
+        },
+        {
+          "label": "top_p",
+          "name": "top_p",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "top_p"
+          },
+          "link": null
+        },
+        {
+          "label": "top_k",
+          "name": "top_k",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "top_k"
+          },
+          "link": null
+        },
+        {
+          "label": "temperature",
+          "name": "temperature",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "temperature"
+          },
+          "link": null
+        },
+        {
+          "label": "repetition_penalty",
+          "name": "repetition_penalty",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "repetition_penalty"
+          },
+          "link": null
+        },
+        {
+          "label": "attention",
+          "name": "attention",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "label": "audio",
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            64,
+            67
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "qwen3-tts-comfyui",
+        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
+        "Node name for S&R": "FB_Qwen3TTSVoiceDesign",
+        "aux_id": "flybirdxx/ComfyUI-Qwen-TTS",
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "ue_properties": {
+          "widget_ue_connectable": {}
+        }
+      },
+      "widgets_values": [
+        "靠过去？可、可我们才第一次见面……你都不认识我……",
+        "25岁男性上班族，声音清亮但时常犹豫，语速时快时慢，紧张时会轻微结巴。情绪波动明显，从低声呢喃到突然激动再到自我怀疑的叹气。肢体语言丰富，经常无意识的小动作",
+        "1.7B",
+        "auto",
+        "bf16",
+        "Chinese",
+        489742050863978,
+        "fixed",
+        2048,
+        0.8,
+        20,
+        1,
+        1.05,
+        "auto",
+        false
+      ]
+    },
+    {
+      "id": 68,
       "type": "FB_Qwen3TTSDialogueInference",
       "pos": [
         1420,
         -3490
       ],
       "size": [
-        420,
-        490
+        410,
+        680
       ],
-      "flags": {
-        "collapsed": false
-      },
+      "flags": {},
       "order": 13,
       "mode": 0,
       "inputs": [
@@ -1199,7 +1508,7 @@
           "label": "role_bank",
           "name": "role_bank",
           "type": "QWEN3_ROLE_BANK",
-          "link": 80
+          "link": 82
         },
         {
           "label": "script",
@@ -1265,6 +1574,15 @@
           "link": null
         },
         {
+          "label": "batch_size",
+          "name": "batch_size",
+          "type": "INT",
+          "widget": {
+            "name": "batch_size"
+          },
+          "link": null
+        },
+        {
           "label": "seed",
           "name": "seed",
           "shape": 7,
@@ -1283,6 +1601,66 @@
             "name": "max_new_tokens_per_line"
           },
           "link": null
+        },
+        {
+          "label": "top_p",
+          "name": "top_p",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "top_p"
+          },
+          "link": null
+        },
+        {
+          "label": "top_k",
+          "name": "top_k",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "top_k"
+          },
+          "link": null
+        },
+        {
+          "label": "temperature",
+          "name": "temperature",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "temperature"
+          },
+          "link": null
+        },
+        {
+          "label": "repetition_penalty",
+          "name": "repetition_penalty",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "repetition_penalty"
+          },
+          "link": null
+        },
+        {
+          "label": "attention",
+          "name": "attention",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "attention"
+          },
+          "link": null
+        },
+        {
+          "label": "unload_model_after_generate",
+          "name": "unload_model_after_generate",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "unload_model_after_generate"
+          },
+          "link": null
         }
       ],
       "outputs": [
@@ -1291,13 +1669,13 @@
           "name": "audio",
           "type": "AUDIO",
           "links": [
-            81
+            83
           ]
         }
       ],
       "properties": {
         "cnr_id": "qwen3-tts-comfyui",
-        "ver": "ceae04a2b1998b49799135132dd00142c3e650c1",
+        "ver": "c7db6c2eb0f269d358c53bb71688dc95de4f7d07",
         "Node name for S&R": "FB_Qwen3TTSDialogueInference"
       },
       "widgets_values": [
@@ -1306,61 +1684,18 @@
         "auto",
         "bf16",
         "Auto",
-        1,
+        0.5,
         true,
-        290551275754799,
+        4,
+        621937922163232,
         "randomize",
-        2048
-      ]
-    },
-    {
-      "id": 62,
-      "type": "SaveAudio",
-      "pos": [
-        1960,
-        -3270
-      ],
-      "size": [
-        270,
-        112
-      ],
-      "flags": {},
-      "order": 14,
-      "mode": 0,
-      "inputs": [
-        {
-          "label": "audio",
-          "name": "audio",
-          "type": "AUDIO",
-          "link": 81
-        },
-        {
-          "label": "filename_prefix",
-          "name": "filename_prefix",
-          "type": "STRING",
-          "widget": {
-            "name": "filename_prefix"
-          },
-          "link": null
-        },
-        {
-          "label": "audioUI",
-          "name": "audioUI",
-          "type": "AUDIO_UI",
-          "widget": {
-            "name": "audioUI"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.8.2",
-        "Node name for S&R": "SaveAudio"
-      },
-      "widgets_values": [
-        "audio/ComfyUI"
+        2048,
+        0.8,
+        20,
+        1,
+        1.05,
+        "auto",
+        false
       ]
     }
   ],
@@ -1462,16 +1797,16 @@
       "VOICE_CLONE_PROMPT"
     ],
     [
-      80,
+      82,
       52,
       0,
-      67,
+      68,
       0,
       "QWEN3_ROLE_BANK"
     ],
     [
-      81,
-      67,
+      83,
+      68,
       0,
       62,
       0,
@@ -1483,10 +1818,10 @@
   "extra": {
     "workflowRendererVersion": "LG",
     "ds": {
-      "scale": 0.13366291619146167,
+      "scale": 0.9891389880952491,
       "offset": [
-        6116.864518479499,
-        4831.452839764828
+        -638.073203306879,
+        3539.1123590665416
       ]
     },
     "frontendVersion": "1.36.13",
