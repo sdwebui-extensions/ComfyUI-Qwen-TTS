@@ -8,6 +8,7 @@ ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, base
 
 ## 📋 Changelog
 
+- **2026-01-24**: Added attention mechanism selection & model memory management features ([update.md](doc/update.md))
 - **2026-01-24**: Added generation parameters (top_p, top_k, temperature, repetition_penalty) to all TTS nodes ([update.md](doc/update.md))
 - **2026-01-23**: Dependency compatibility & Mac (MPS) support, New nodes: VoiceClonePromptNode, DialogueInferenceNode ([update.md](doc/update.md))
 
@@ -20,49 +21,127 @@ ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, base
 - 🎯 **Multilingual**: Native support for 10 languages (Chinese, English, Japanese, Korean, German, French, Russian, Portuguese, Spanish, and Italian).
 - ⚡ **Integrated Loading**: No separate loader nodes required; model loading is managed on-demand with global caching.
 - ⏱️ **Ultra-Low Latency**: Supports high-fidelity speech reconstruction with low-latency streaming.
+- 🧠 **Attention Mechanism Selection**: Choose from multiple attention implementations (sage_attn, flash_attn, sdpa, eager) with auto-detection and graceful fallback.
+- 💾 **Memory Management**: Optional model unloading after generation to free GPU memory for users with limited VRAM.
 
 ## Nodes List
 
 ### 1. Qwen3-TTS Voice Design (`VoiceDesignNode`)
-
 Generate unique voices based on text descriptions.
-
 - **Inputs**:
   - `text`: Target text to synthesize.
   - `instruct`: Description of the voice (e.g., "A gentle female voice with a high pitch").
   - `model_choice`: Currently locked to **1.7B** for VoiceDesign features.
+  - `attention`: Attention mechanism (auto, sage_attn, flash_attn, sdpa, eager).
+  - `unload_model_after_generate`: Unload model from memory after generation to free GPU memory.
 - **Capabilities**: Best for creating "imaginary" voices or specific character archetypes.
 
 ### 2. Qwen3-TTS Voice Clone (`VoiceCloneNode`)
-
 Clone a voice from a reference audio clip.
-
 - **Inputs**:
   - `ref_audio`: A short (5-15s) audio clip to clone.
   - `ref_text`: Text spoken in the `ref_audio` (helps improve quality).
   - `target_text`: The new text you want the cloned voice to say.
   - `model_choice`: Choose between **0.6B** (fast) or **1.7B** (high quality).
+  - `attention`: Attention mechanism (auto, sage_attn, flash_attn, sdpa, eager).
+  - `unload_model_after_generate`: Unload model from memory after generation to free GPU memory.
 
 ### 3. Qwen3-TTS Custom Voice (`CustomVoiceNode`)
-
 Standard TTS using preset speakers.
-
 - **Inputs**:
   - `text`: Target text.
   - `speaker`: Selection from preset voices (Aiden, Eric, Serena, etc.).
   - `instruct`: Optional style instructions.
+  - `attention`: Attention mechanism (auto, sage_attn, flash_attn, sdpa, eager).
+  - `unload_model_after_generate`: Unload model from memory after generation to free GPU memory.
 
-### 4. Qwen3-TTS Voice Clone Prompt (`VoiceClonePromptNode`) [New]
+### 4. Qwen3-TTS Role Bank (`RoleBankNode`) [New]
+Collect and manage multiple voice prompts for dialogue generation.
+- **Inputs**:
+  - Up to 8 roles, each with:
+    - `role_name_N`: Name of the role (e.g., "Alice", "Bob", "Narrator")
+    - `prompt_N`: Voice clone prompt from `VoiceClonePromptNode`
+- **Capabilities**: Create named voice registry for use in `DialogueInferenceNode`. Supports up to 8 different voices per bank.
 
+### 5. Qwen3-TTS Voice Clone Prompt (`VoiceClonePromptNode`) [New]
 Extract and reuse voice features from reference audio.
-
+- **Inputs**:
+  - `ref_audio`: A short (5-15s) audio clip to extract features from.
+  - `ref_text`: Text spoken in the `ref_audio` (highly recommended for better quality).
+  - `model_choice`: Choose between **0.6B** (fast) or **1.7B** (high quality).
+  - `attention`: Attention mechanism (auto, sage_attn, flash_attn, sdpa, eager).
+  - `unload_model_after_generate`: Unload model from memory after generation to free GPU memory.
 - **Capabilities**: Extract a "prompt item" once and use it multiple times across different `VoiceCloneNode` instances for faster and more consistent generation.
 
-### 5. Qwen3-TTS Multi-role Dialogue (`DialogueInferenceNode`) [New]
-
+### 6. Qwen3-TTS Multi-role Dialogue (`DialogueInferenceNode`) [New]
 Synthesize complex dialogues with multiple speakers.
-
+- **Inputs**:
+  - `script`: Dialogue script in format "RoleName: Text".
+  - `role_bank`: Role bank from `RoleBankNode` containing voice prompts.
+  - `model_choice`: Choose between **0.6B** (fast) or **1.7B** (high quality).
+  - `attention`: Attention mechanism (auto, sage_attn, flash_attn, sdpa, eager).
+  - `unload_model_after_generate`: Unload model from memory after generation to free GPU memory.
+  - `pause_seconds`: Silence duration between sentences.
+  - `merge_outputs`: Merge all dialogue segments into a single long audio.
+  - `batch_size`: Number of lines to process in parallel (larger = faster but more VRAM).
 - **Capabilities**: Handles multi-role speech synthesis in a single node, ideal for audiobook narration or roleplay scenarios.
+
+## Attention Mechanisms
+
+All nodes support multiple attention implementations with automatic detection and graceful fallback:
+
+| Mechanism | Description | Speed | Installation |
+|-----------|-------------|-------|--------------|
+| **sage_attn** | SAGE attention implementation | ⚡⚡⚡ Fastest | `pip install sage_attn` |
+| **flash_attn** | Flash Attention 2 | ⚡⚡ Fast | `pip install flash_attn` |
+| **sdpa** | Scaled Dot Product Attention (PyTorch built-in) | ⚡ Medium | Built-in (no installation) |
+| **eager** | Standard attention (fallback) | 🐢 Slowest | Built-in (no installation) |
+| **auto** | Automatically selects best available option | Varies | N/A |
+
+### Auto-Detection Priority
+
+When `attention: "auto"` is selected, the system checks in this order:
+1. **sage_attn** → If installed, use SAGE attention (fastest)
+2. **flash_attn** → If installed, use Flash Attention 2
+3. **sdpa** → Always available (PyTorch built-in)
+4. **eager** → Always available (fallback, slowest)
+
+The selected mechanism is logged to the console for transparency.
+
+### Graceful Fallback
+
+If you select an attention mechanism that's not available:
+- Falls back to `sdpa` (if available)
+- Falls back to `eager` (as last resort)
+- Logs the fallback decision with a warning message
+
+### Model Caching
+
+- Models are cached with attention-specific keys
+- Changing attention mechanism automatically clears cache and reloads model
+- Same model with different attention mechanisms coexists in cache
+
+## Memory Management
+
+### Model Unloading After Generation
+
+The `unload_model_after_generate` toggle is available on all nodes:
+- **Enabled**: Clears model cache, GPU memory, and runs garbage collection after generation
+- **Disabled**: Model remains in cache for faster subsequent generations (default)
+
+**When to use:**
+- ✅ Enable if you have limited VRAM (< 8GB)
+- ✅ Enable if you need to run multiple different models sequentially
+- ✅ Enable if you're done with generation and want to free memory
+- ❌ Disable if you're generating multiple clips with the same model (faster)
+
+**Console Output:**
+```
+🗑️ [Qwen3-TTS] Unloading 1 cached model(s)...
+✅ [Qwen3-TTS] Model cache and GPU memory cleared
+```
+
+
 
 ## Installation
 
@@ -72,44 +151,28 @@ Ensure you have the required dependencies:
 pip install torch torchaudio transformers librosa accelerate
 ```
 
-## Model Downloading (Offline Use)
-
-By default, the nodes will attempt to download models from Hugging Face automatically. For offline usage or to avoid download timeouts, you can manually download the models.
-
-### Option 1: Automatic Download Script (Recommended)
-
-You can simply run the provided python script to download all necessary models to the correct location:
-
-```bash
-python download_models.py
-```
-
-_Note: This script will try to detect your ComfyUI installation. You can also pass arguments like `--small` for 0.6B models._
-
-### Option 2: Manual Download
-
-1. Create a folder `qwen-tts` inside your ComfyUI `models` directory:
-
-   ```
-   ComfyUI/models/qwen-tts/
-   ```
-
-2. Download the models from Hugging Face and place them in subfolders. The folder names **must match exactly**:
-
-| Model Type               | Folder Name (Create this inside `qwen-tts`) | Hugging Face Repo                                                   |
-| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------- |
-| **Tokenizer** (Required) | `Qwen3-TTS-Tokenizer-12Hz`                  | [Link](https://huggingface.co/Qwen/Qwen3-TTS-Tokenizer-12Hz)        |
-| **Voice Clone** (Base)   | `Qwen3-TTS-12Hz-1.7B-Base`                  | [Link](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base)        |
-| **Voice Design**         | `Qwen3-TTS-12Hz-1.7B-VoiceDesign`           | [Link](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign) |
-| **Custom Voice**         | `Qwen3-TTS-12Hz-1.7B-CustomVoice`           | [Link](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) |
-
-> **Note**: For the 0.6B versions, check the [Qwen3 Collection](https://huggingface.co/collections/Qwen/qwen3-tts).
-
 ## Tips for Best Results
 
+### Audio Quality
 - **Cloning**: Use clean, noise-free reference audio (5-15 seconds).
+- **Reference Text**: Providing text spoken in reference audio significantly improves quality.
+- **Language**: Select the correct language for best pronunciation and prosody.
+
+### Performance & Memory
 - **VRAM**: Use `bf16` precision to save significant memory with minimal quality loss.
+- **Attention**: Use `attention: "auto"` for automatic selection of fastest available mechanism.
+- **Model Unloading**: Enable `unload_model_after_generate` if you have limited VRAM (< 8GB) or need to run multiple different models.
 - **Local Models**: Pre-download weights to `models/qwen-tts/` to prioritize local loading and avoid HuggingFace timeouts.
+
+### Attention Mechanisms
+- **Best Performance**: Install `sage_attn` or `flash_attn` for 2-3x speedup over sdpa.
+- **Compatibility**: Use `sdpa` (default) for maximum compatibility - no installation required.
+- **Low VRAM**: Use `eager` with smaller models (0.6B) if other mechanisms cause OOM errors.
+
+### Dialogue Generation
+- **Batch Size**: Increase `batch_size` for faster generation (more VRAM usage).
+- **Pauses**: Adjust `pause_seconds` to control timing between dialogue segments.
+- **Merge**: Enable `merge_outputs` for continuous dialogue; disable for separate clips.
 
 ## Acknowledgments
 
