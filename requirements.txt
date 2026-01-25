@@ -9,3 +9,4 @@ einops
 tiktoken
 sentencepiece
 sox
+huggingface_hub
