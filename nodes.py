@@ -224,6 +224,9 @@ def download_model_if_needed(model_id: str, qwen_root: str) -> str:
         # Model already exists
         return target_dir
     
+    if os.path.exists(os.path.join(folder_paths.cache_dir, "huggingface", model_id)):
+        return os.path.join(folder_paths.cache_dir, "huggingface", model_id)
+    
     print(f"\n📥 [Qwen3-TTS] Downloading {model_id}...")
     try:
         from huggingface_hub import snapshot_download
