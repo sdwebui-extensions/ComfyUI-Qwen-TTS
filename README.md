@@ -20,9 +20,9 @@ ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, base
 ## Online Workflows
 
 - **Qwen3-TTS Multi-Role Multi-Round Dialogue Generation Workflow**:
-  - [workflow](https://www.runninghub.ai/post/2014703508829769729/?inviteCode=rh-v104)
+  - [workflow](https://www.runninghub.ai/post/2014703508829769729/?inviteCode=rh-v1041)
 - **Qwen3-TTS 3-in-1 (Clone, Design, Custom) Workflow**:
-  - [workflow](https://www.runninghub.ai/post/2014962110224142337/?inviteCode=rh-v104)
+  - [workflow](https://www.runninghub.ai/post/2014962110224142337/?inviteCode=rh-v1041)
 
 ## Key Features
 
