@@ -20,9 +20,9 @@
 ## 在线工作流 (Online Workflows)
 
 - **Qwen3-TTS 多角色多轮对话生成工作流**:
-  - [workflow](https://www.runninghub.cn/post/2014703508829769729/?inviteCode=rh-v104)
+  - [workflow](https://www.runninghub.cn/post/2014703508829769729/?inviteCode=rh-v1041)
 - **Qwen3-TTS 3-in-1 (克隆、设计、自定义) 工作流**:
-  - [workflow](https://www.runninghub.cn/post/2014962110224142337/?inviteCode=rh-v104)
+  - [workflow](https://www.runninghub.cn/post/2014962110224142337/?inviteCode=rh-v1041)
 
 ## 功能特性
 
