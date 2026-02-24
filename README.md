@@ -8,9 +8,21 @@ ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, base
 
 ## 📋 Changelog
 
+- **2026-02-04**: Feature Update: Added Global Pause Control (`QwenTTSConfigNode`) and `extra_model_paths.yaml` support ([update.md](doc/update.md))
+- **2026-01-29**: Feature Update: Support for loading custom fine-tuned models & speakers ([update.md](doc/update.md))
+  - *Note: Fine-tuning is currently experimental; zero-shot cloning is recommended for best results.*
+- **2026-01-27**: UI Optimization: Sleek LoadSpeaker UI; fixed PyTorch 2.6+ compatibility ([update.md](doc/update.md))
+- **2026-01-26**: Functional Update: New voice persistence system (SaveVoice / LoadSpeaker) ([update.md](doc/update.md))
 - **2026-01-24**: Added attention mechanism selection & model memory management features ([update.md](doc/update.md))
 - **2026-01-24**: Added generation parameters (top_p, top_k, temperature, repetition_penalty) to all TTS nodes ([update.md](doc/update.md))
 - **2026-01-23**: Dependency compatibility & Mac (MPS) support, New nodes: VoiceClonePromptNode, DialogueInferenceNode ([update.md](doc/update.md))
+
+## Online Workflows
+
+- **Qwen3-TTS Multi-Role Multi-Round Dialogue Generation Workflow**:
+  - [workflow](https://www.runninghub.ai/post/2014703508829769729/?inviteCode=rh-v1041)
+- **Qwen3-TTS 3-in-1 (Clone, Design, Custom) Workflow**:
+  - [workflow](https://www.runninghub.ai/post/2014962110224142337/?inviteCode=rh-v1041)
 
 ## Key Features
 
@@ -86,6 +98,24 @@ Synthesize complex dialogues with multiple speakers.
   - `batch_size`: Number of lines to process in parallel (larger = faster but more VRAM).
 - **Capabilities**: Handles multi-role speech synthesis in a single node, ideal for audiobook narration or roleplay scenarios.
 
+### 7. Qwen3-TTS Load Speaker (`LoadSpeakerNode`) [New]
+Load saved voice features and metadata with zero configuration.
+- **Capabilities**: Enables a "Select & Play" experience by auto-loading pre-computed features and metadata.
+
+### 8. Qwen3-TTS Save Voice (`SaveVoiceNode`) [New]
+Persist extracted voice features and metadata to disk for future use.
+- **Capabilities**: Build a permanent voice library for reuse via `LoadSpeakerNode`.
+
+### 9. Qwen3-TTS Config (`QwenTTSConfigNode`) [New]
+Define global pause durations for punctuation to control speech rhythm.
+- **Inputs**:
+  - `pause_linebreak`: Silence after linebreaks.
+  - `period_pause`: Silence after periods (.).
+  - `comma_pause`: Silence after commas (,).
+  - `question_pause`: Silence after question marks (?).
+  - `hyphen_pause`: Silence after hyphens (-).
+- **Usage**: Connect output to the `config` input of other TTS nodes.
+
 ## Attention Mechanisms
 
 All nodes support multiple attention implementations with automatic detection and graceful fallback:
@@ -151,6 +181,26 @@ Ensure you have the required dependencies:
 pip install torch torchaudio transformers librosa accelerate
 ```
 
+### Model Directory Structure
+
+ComfyUI-Qwen-TTS automatically searches for models in the following priority:
+
+```text
+ComfyUI/
+├── models/
+│   └── qwen-tts/
+│       ├── Qwen/Qwen3-TTS-12Hz-1.7B-Base/
+│       ├── Qwen/Qwen3-TTS-12Hz-0.6B-Base/
+│       ├── Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign/
+│       ├── Qwen/Qwen3-TTS-Tokenizer-12Hz/
+│       └── voices/ (Saved presets .wav/.qvp)
+```
+
+**Note**: You can also use `extra_model_paths.yaml` to define a custom model path:
+```yaml
+qwen-tts: D:\MyModels\Qwen
+```
+
 ## Tips for Best Results
 
 ### Audio Quality
@@ -182,3 +232,8 @@ pip install torch torchaudio transformers librosa accelerate
 
 - This project is licensed under the **Apache License 2.0**.
 - Model weights are subject to the [Qwen3-TTS License Agreement](https://github.com/QwenLM/Qwen3-TTS#License).
+
+## Author
+
+- **Bilibili**: [Space](https://space.bilibili.com/5594117?spm_id_from=333.1007.0.0)
+- **YouTube**: [Channel](https://www.youtube.com/channel/UCx5L-wKf93YNbcP_55vDCeg)

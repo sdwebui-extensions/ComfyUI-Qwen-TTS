@@ -8,9 +8,21 @@
 
 ## 📋 更新日志
 
+- **2026-02-04**: 功能更新：添加全局停顿控制 (`QwenTTSConfigNode`) 与 `extra_model_paths.yaml` 支持 ([update.md](doc/update.md))
+- **2026-01-29**: 功能更新：支持加载自定义微调模型和 Speaker ([update.md](doc/update.md))
+  - *注意：微调功能目前为实验性；推荐直接使用声音克隆以获得最佳效果。*
+- **2026-01-27**：功能优化：精简 LoadSpeaker UI，修复 PyTorch 兼容性 ([update.md](doc/update.md))
+- **2026-01-26**：功能更新：新增声音持久化系统 (SaveVoice / LoadSpeaker) ([update.md](doc/update.md))
 - **2026-01-24**：添加注意力机制选择和模型内存管理功能 ([update.md](doc/update.md))
 - **2026-01-24**：为所有 TTS 节点添加生成参数 (top_p, top_k, temperature, repetition_penalty) ([update.md](doc/update.md))
 - **2026-01-23**：依赖兼容性与 Mac (MPS) 支持，新增节点：VoiceClonePromptNode, DialogueInferenceNode ([update.md](doc/update.md))
+
+## 在线工作流 (Online Workflows)
+
+- **Qwen3-TTS 多角色多轮对话生成工作流**:
+  - [workflow](https://www.runninghub.cn/post/2014703508829769729/?inviteCode=rh-v1041)
+- **Qwen3-TTS 3-in-1 (克隆、设计、自定义) 工作流**:
+  - [workflow](https://www.runninghub.cn/post/2014962110224142337/?inviteCode=rh-v1041)
 
 ## 功能特性
 
@@ -86,6 +98,25 @@
   - `batch_size`: 并行处理的行数（越大越快，但占用更多显存）。
 - **能力**: 在单个节点内处理多角色语音合成，非常适合有声书制作或角色扮演场景。
 
+### 7. Qwen3-TTS 加载声音 (`LoadSpeakerNode`) [新增]
+加载已保存的声音特征与元数据。
+- **输入**: 选择已保存的 `.wav` 文件。
+- **能力**: 实现“一键加载”体验，自动同步加载预计算特征和参考文本。
+
+### 8. Qwen3-TTS 保存声音 (`SaveVoiceNode`) [新增]
+将克隆的声音特征及其参考文本永久保存到磁盘。
+- **能力**: 建立个性化声音库。保存后可通过 `LoadSpeakerNode` 极速调用。
+
+### 9. Qwen3-TTS 全局配置 (`QwenTTSConfigNode`) [New]
+为 TTS 节点定义标点符号的停顿持续时间，精确控制语音节奏。
+- **输入**:
+  - `pause_linebreak`: 换行符处的停顿时间。
+  - `period_pause`: 句号 (.) 后的停顿时间。
+  - `comma_pause`: 逗号 (,) 后的停顿时间。
+  - `question_pause`: 问号 (?) 后的停顿时间。
+  - `hyphen_pause`: 连字符 (-) 后的停顿时间。
+- **用法**: 连接到其他 TTS 节点的 `config` 输入端。
+
 ## 注意力机制
 
 所有节点支持多种注意力实现，具有自动检测和优雅降级功能：
@@ -149,6 +180,26 @@
 pip install torch torchaudio transformers librosa accelerate
 ```
 
+### 模型目录结构示意
+
+目前插件按以下顺序自动搜索模型：
+
+```text
+ComfyUI/
+├── models/
+│   └── qwen-tts/
+│       ├── Qwen/Qwen3-TTS-12Hz-1.7B-Base/
+│       ├── Qwen/Qwen3-TTS-12Hz-0.6B-Base/
+│       ├── Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign/
+│       ├── Qwen/Qwen3-TTS-Tokenizer-12Hz/
+│       └── voices/ (保存的预设 .wav/.qvp)
+```
+
+**提示**: 你也可以通过 `extra_model_paths.yaml` 自定义模型路径：
+```yaml
+qwen-tts: D:\MyAI\Models\Qwen
+```
+
 ## 最佳实践技巧
 
 ### 音频质量
@@ -180,3 +231,8 @@ pip install torch torchaudio transformers librosa accelerate
 
 - 本项目采用 **Apache License 2.0** 许可证。
 - 模型权重请参考 [Qwen3-TTS 许可协议](https://github.com/QwenLM/Qwen3-TTS#License)。
+
+## 作者 (Author)
+
+- **Bilibili**: [个人空间](https://space.bilibili.com/5594117?spm_id_from=333.1007.0.0)
+- **YouTube**: [频道](https://www.youtube.com/channel/UCx5L-wKf93YNbcP_55vDCeg)

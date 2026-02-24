@@ -1,6 +1,6 @@
 torch
 torchaudio
-transformers>=4.51.0
+transformers>=4.57.0
 librosa
 soundfile
 accelerate
@@ -12,3 +12,5 @@ sox
 huggingface_hub
 onnxruntime
 onnxruntime-gpu
+safetensors
+scipy>=1.11.0

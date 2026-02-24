@@ -18,7 +18,11 @@ from .nodes import (
     VoiceClonePromptNode,
     RoleBankNode,
     DialogueInferenceNode,
+    SaveVoiceNode,
+    LoadSpeakerNode,
+    QwenTTSConfigNode,
 )
+from .train import Qwen3TTS_Train_Node
 
 # Node mappings
 NODE_CLASS_MAPPINGS = {
@@ -28,6 +32,10 @@ NODE_CLASS_MAPPINGS = {
     "FB_Qwen3TTSVoiceClonePrompt": VoiceClonePromptNode,
     "FB_Qwen3TTSRoleBank": RoleBankNode,
     "FB_Qwen3TTSDialogueInference": DialogueInferenceNode,
+    "FB_Qwen3TTSSaveVoice": SaveVoiceNode,
+    "FB_Qwen3TTSLoadSpeaker": LoadSpeakerNode,
+    "FB_Qwen3TTSConfig": QwenTTSConfigNode,
+    "FB_Qwen3TTSTrain": Qwen3TTS_Train_Node,
 }
 
 # Node display name mappings
@@ -38,9 +46,13 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "FB_Qwen3TTSVoiceClonePrompt": "🎭 Qwen3-TTS VoiceClonePrompt",
     "FB_Qwen3TTSRoleBank": "📇 Qwen3-TTS RoleBank",
     "FB_Qwen3TTSDialogueInference": "💬 Qwen3-TTS DialogueInference",
+    "FB_Qwen3TTSSaveVoice": "💾 Qwen3-TTS SaveVoice",
+    "FB_Qwen3TTSLoadSpeaker": "🎙️ Qwen3-TTS LoadSpeaker",
+    "FB_Qwen3TTSConfig": "⚙️ Qwen3-TTS Config (Pause Control)",
+    "FB_Qwen3TTSTrain": "🏋️ Qwen3-TTS Train",
 }
 
 # Version information
-__version__ = "1.0.1"
+__version__ = "1.0.6"
 
 print(f"✅ ComfyUI-Qwen-TTS v{__version__} loaded")
