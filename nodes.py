@@ -11,7 +11,6 @@ import folder_paths
 import types
 
 from comfy import model_management
-from comfy import model_management
 from comfy.utils import ProgressBar
 
 # Register "qwen-tts" model folder for extra_model_paths.yaml support
@@ -169,6 +168,10 @@ def split_text_by_pauses(text: str, config: Dict[str, float]) -> List[Tuple[str,
     question_pause = config.get("question_pause", 0.6)
     hyphen_pause = config.get("hyphen_pause", 0.3)
 
+    # Handle linebreaks: replace \n with break tags before punctuation processing
+    if pause_linebreak > 0:
+        text = re.sub(r'\n+', f' [break={pause_linebreak}] ', text)
+
     # Inject break tags for both English and Chinese punctuation
     if period_pause > 0:
         text = re.sub(r'[\.。](?!\d)', rf'\g<0> [break={period_pause}]', text)
@@ -230,7 +233,7 @@ def unload_cached_model(cache_key=None):
         print(f"[Qwen3-TTS] Unloading model: {cache_key}...")
         del _MODEL_CACHE[cache_key]
     elif _MODEL_CACHE:
-        print(f"[Qwen3-TTS] Unloading {_MODEL_CACHE.__len__()} cached model(s)...")
+        print(f"[Qwen3-TTS] Unloading {len(_MODEL_CACHE)} cached model(s)...")
         _MODEL_CACHE.clear()
 
     model_management.soft_empty_cache()
@@ -362,16 +365,12 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
         else:
             device = "cpu"
     
-    # 强制 Mac 使用 float16 或 bfloat16 (MPS 跑 float32 会很慢)
     if device == "mps" and precision == "bf16":
         dtype = torch.bfloat16
     elif device == "mps":
         dtype = torch.float16
     else:
         dtype = torch.bfloat16 if precision == "bf16" else torch.float32
-    
-    # Set precision
-    dtype = torch.bfloat16 if precision == "bf16" else torch.float32
     
     # VoiceDesign restriction
     if model_type == "VoiceDesign" and model_choice == "0.6B":
@@ -403,8 +402,6 @@ def load_qwen_model(model_type: str, model_choice: str, device: str, precision: 
                 base_paths.append(alt_qwen_tts_dir)
     except Exception:
         pass
-    
-    except Exception: pass
 
     # Check registered "qwen-tts" paths (includes extra_model_paths.yaml)
     try:
@@ -581,7 +578,6 @@ class VoiceDesignNode:
                 "repetition_penalty": ("FLOAT", {"default": 1.05, "min": 1.0, "max": 2.0, "step": 0.05, "tooltip": "Penalty for repetition"}),
                 "attention": (ATTENTION_OPTIONS, {"default": "auto", "tooltip": "Attention implementation"}),
                 "unload_model_after_generate": ("BOOLEAN", {"default": False, "tooltip": "Unload model from memory after generation"}),
-                "config": ("TTS_CONFIG",),
             }
         }
 
@@ -591,7 +587,7 @@ class VoiceDesignNode:
     CATEGORY = "Qwen3-TTS"
     DESCRIPTION = "VoiceDesign: Generate custom voices from descriptions."
 
-    def generate(self, text: str, instruct: str, model_choice: str, device: str, precision: str, language: str, seed: int = 0, max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05, attention: str = "auto", unload_model_after_generate: bool = False, config: Dict[str, Any] = None) -> Tuple[Dict[str, Any]]:
+    def generate(self, text: str, instruct: str, model_choice: str, device: str, precision: str, language: str, seed: int = 0, max_new_tokens: int = 2048, top_p: float = 0.8, top_k: int = 20, temperature: float = 1.0, repetition_penalty: float = 1.05, attention: str = "auto", unload_model_after_generate: bool = False) -> Tuple[Dict[str, Any]]:
         if not text or not instruct:
             raise RuntimeError("Text and instruction description are required")
 
@@ -611,80 +607,39 @@ class VoiceDesignNode:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        import numpy as np
         np.random.seed(seed % (2**32))
 
         pbar.update_absolute(2, 3, None)
 
         mapped_lang = LANGUAGE_MAP.get(language, "auto")
-        
-        # Use helper to split text based on config (if provided)
-        segments = split_text_by_pauses(text, config)
 
-        results = []
-        sr = 24000  # Default Qwen sr, will be overwritten by actual generation
-
-        for i, (seg_text, pause_dur) in enumerate(segments):
-            if not seg_text.strip():
-                # Just pause?
-                if pause_dur > 0:
-                     silence_len = int(pause_dur * sr)
-                     silence = torch.zeros((1, 1, silence_len))
-                     results.append(silence)
-                continue
-
-            print(f"[Qwen3-TTS] Generating segment {i+1}/{len(segments)}: '{seg_text[:20]}...'")
-            
-            wavs, sr = model.generate_voice_design(
-                text=seg_text,
-                language=mapped_lang,
-                instruct=instruct,
-                max_new_tokens=max_new_tokens,
-                top_p=top_p,
-                top_k=top_k,
-                temperature=temperature,
-                repetition_penalty=repetition_penalty,
-            )
-            
-            if isinstance(wavs, list) and len(wavs) > 0:
-                waveform = torch.from_numpy(wavs[0]).float()
-                if waveform.ndim == 1:
-                    waveform = waveform.unsqueeze(0).unsqueeze(0) # [1, 1, S]
-                elif waveform.ndim == 2:
-                    waveform = waveform.unsqueeze(0) # [1, C, S]
-                
-                results.append(waveform)
-            
-            if pause_dur > 0:
-                silence_len = int(pause_dur * sr)
-                silence = torch.zeros((1, 1, silence_len))
-                results.append(silence)
+        wavs, sr = model.generate_voice_design(
+            text=text,
+            language=mapped_lang,
+            instruct=instruct,
+            max_new_tokens=max_new_tokens,
+            top_p=top_p,
+            top_k=top_k,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+        )
 
         pbar.update_absolute(3, 3, None)
 
-        if results:
-            # Concatenate all
-            max_len = max(w.shape[-1] for w in results) # Wait, shape[-1] is time. We concatenate on time.
-            # Dimensions are [1, 1, S]. All should be [1, 1, S] or compatible.
-            # Assuming mono for simplicity or compatible channels.
-            
-            # Check channels compatibility
-            target_channels = results[0].shape[1]
-            padded_results = []
-            for w in results:
-                if w.shape[1] != target_channels:
-                    # Fix channels if needed (mean or duplicate)
-                    pass 
-                padded_results.append(w)
+        if isinstance(wavs, list) and len(wavs) > 0:
+            waveform = torch.from_numpy(wavs[0]).float()
+            if waveform.ndim == 1:
+                waveform = waveform.unsqueeze(0).unsqueeze(0)
+            elif waveform.ndim == 2:
+                waveform = waveform.unsqueeze(0)
 
-            merged_waveform = torch.cat(padded_results, dim=-1)
-            audio_data = {"waveform": merged_waveform, "sample_rate": sr}
+            audio_data = {"waveform": waveform, "sample_rate": sr}
 
             if unload_model_after_generate and hasattr(model, '_unload_callback') and model._unload_callback:
                 model._unload_callback()
 
             return (audio_data,)
-        
+
         raise RuntimeError("Invalid audio data generated")
 
 
@@ -835,7 +790,6 @@ class VoiceCloneNode:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        import numpy as np
         np.random.seed(seed % (2**32))
         pbar.update_absolute(2, 3, None)
 
@@ -1005,7 +959,6 @@ class CustomVoiceNode:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        import numpy as np
         np.random.seed(seed % (2**32))
 
         pbar.update_absolute(2, 3, None)
@@ -1064,7 +1017,10 @@ class CustomVoiceNode:
             padded_results = []
             for w in results:
                 if w.shape[1] != target_channels:
-                   pass
+                    if target_channels == 2 and w.shape[1] == 1:
+                        w = w.repeat(1, 2, 1)
+                    elif target_channels == 1 and w.shape[1] == 2:
+                        w = torch.mean(w, dim=1, keepdim=True)
                 padded_results.append(w)
             
             merged_waveform = torch.cat(padded_results, dim=-1)
@@ -1241,7 +1197,6 @@ class DialogueInferenceNode:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        import numpy as np
         np.random.seed(seed % (2**32))
 
         lines = script.strip().split("\n")
@@ -1607,29 +1562,3 @@ class QwenTTSConfigNode:
             "question_pause": question_pause,
             "hyphen_pause": hyphen_pause,
         },)
-
-
-# Register nodes
-NODE_CLASS_MAPPINGS = {
-    "VoiceDesignNode": VoiceDesignNode,
-    "VoiceCloneNode": VoiceCloneNode,
-    "CustomVoiceNode": CustomVoiceNode,
-    "VoiceClonePromptNode": VoiceClonePromptNode,
-    "RoleBankNode": RoleBankNode,
-    "DialogueInferenceNode": DialogueInferenceNode,
-    "SaveVoiceNode": SaveVoiceNode,
-    "LoadSpeakerNode": LoadSpeakerNode,
-    "QwenTTSConfigNode": QwenTTSConfigNode,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "VoiceDesignNode": "Qwen3 Voice Design",
-    "VoiceCloneNode": "Qwen3 Voice Clone",
-    "CustomVoiceNode": "Qwen3 Custom Voice (TTS)",
-    "VoiceClonePromptNode": "Qwen3 Voice Clone Prompt",
-    "RoleBankNode": "Qwen3 Role Bank",
-    "DialogueInferenceNode": "Qwen3 Dialogue Inference",
-    "SaveVoiceNode": "Qwen3 Save Voice",
-    "LoadSpeakerNode": "Qwen3 Load Speaker (WAV)",
-    "QwenTTSConfigNode": "Qwen3 TTS Config (Pause Control)",
-}
