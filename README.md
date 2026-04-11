@@ -2,6 +2,14 @@
 
 English | [中文版](README_CN.md)
 
+> **⚠️ CRITICAL: transformers Version Requirement**
+>
+> Qwen3-TTS is **incompatible** with `transformers >= 5.0`. Versions 5.0+ introduce breaking API changes that will cause model loading failures and runtime errors. Please pin your version:
+> ```bash
+> pip install transformers==4.57.3
+> ```
+> If you have already installed a newer version, **downgrade immediately** before using this plugin.
+
 ![Nodes Screenshot](example/example.png)
 
 ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, based on the open-source **Qwen3-TTS** project by the Alibaba Qwen team.

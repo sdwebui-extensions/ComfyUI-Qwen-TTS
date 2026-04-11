@@ -2,6 +2,14 @@
 
 [English](README.md) | 中文版
 
+> **⚠️ 重要提醒：transformers 版本要求**
+>
+> Qwen3-TTS 与 `transformers >= 5.0` **不兼容**。5.0 及以上版本引入了破坏性的 API 变更，会导致模型加载失败和运行时错误。请务必固定版本：
+> ```bash
+> pip install transformers==4.57.3
+> ```
+> 如果你已经安装了更高版本，请在使用本插件前**立即降级**。
+
 ![节点截图](example/example.png)
 
 基于阿里巴巴 Qwen 团队开源的 **Qwen3-TTS** 项目，为 ComfyUI 实现的语音合成自定义节点。
