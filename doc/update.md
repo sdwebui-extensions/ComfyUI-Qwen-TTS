@@ -1,9 +1,19 @@
 # Update Log
 
+## 2026-04-12 (v1.0.7)
+- **Removed `QwenTTSConfigNode`**: The global pause control node has been removed due to negative impact on audio quality.
+  - Splitting text at punctuation and generating each segment independently caused **voice inconsistency** (different timbres within a single utterance), especially severe for `VoiceDesignNode`.
+  - `VoiceDesignNode`, `VoiceCloneNode`, and `CustomVoiceNode` now generate audio as a single whole-text pass, producing more natural and consistent results.
+  - `DialogueInferenceNode` retains its own built-in pause controls (per-line pause sliders), which are unaffected.
+- **Bug Fix: MPS precision override**: Fixed a critical bug where Mac (MPS) float16 optimization was silently overwritten by a duplicate assignment, causing performance degradation on Apple Silicon.
+- **Bug Fix: CustomVoiceNode channel mismatch**: Fixed a silent `pass` that ignored stereo/mono channel mismatches, which could cause `torch.cat` crashes when concatenating audio segments.
+- **Code Cleanup**: Removed duplicate imports, redundant in-method numpy imports, orphaned except blocks, and unused node mappings in `nodes.py`.
+
 ## 2026-02-04
 - **Global Pause Control**: Introduced `QwenTTSConfigNode` to finely control silence duration after punctuation.
   - Supports separate settings for Linebreaks, Periods (.), Commas (,), Question marks (?), and Hyphens (-).
   - Supported nodes: `VoiceCloneNode`, `CustomVoiceNode`, `VoiceDesignNode`, `DialogueInferenceNode`.
+  - **⚠️ Deprecated in v1.0.7** — removed due to voice inconsistency issues.
 - **Path Configuration**: Added support for ComfyUI's `extra_model_paths.yaml`.
   - You can now define a custom model directory using the `qwen-tts` key.
 

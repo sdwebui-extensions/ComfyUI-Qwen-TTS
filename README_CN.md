@@ -2,13 +2,22 @@
 
 [English](README.md) | 中文版
 
+> **⚠️ 重要提醒：transformers 版本要求**
+>
+> Qwen3-TTS 与 `transformers >= 5.0` **不兼容**。5.0 及以上版本引入了破坏性的 API 变更，会导致模型加载失败和运行时错误。请务必固定版本：
+> ```bash
+> pip install transformers==4.57.3
+> ```
+> 如果你已经安装了更高版本，请在使用本插件前**立即降级**。
+
 ![节点截图](example/example.png)
 
 基于阿里巴巴 Qwen 团队开源的 **Qwen3-TTS** 项目，为 ComfyUI 实现的语音合成自定义节点。
 
 ## 📋 更新日志
 
-- **2026-02-04**: 功能更新：添加全局停顿控制 (`QwenTTSConfigNode`) 与 `extra_model_paths.yaml` 支持 ([update.md](doc/update.md))
+- **2026-04-12 (v1.0.7)**: 移除 `QwenTTSConfigNode`（因分段生成导致音色不一致）；修复 MPS 精度 bug 和 CustomVoice 通道不匹配问题；代码清理 ([update.md](doc/update.md))
+- **2026-02-04**: 添加 `extra_model_paths.yaml` 支持 ([update.md](doc/update.md))
 - **2026-01-29**: 功能更新：支持加载自定义微调模型和 Speaker ([update.md](doc/update.md))
   - *注意：微调功能目前为实验性；推荐直接使用声音克隆以获得最佳效果。*
 - **2026-01-27**：功能优化：精简 LoadSpeaker UI，修复 PyTorch 兼容性 ([update.md](doc/update.md))
@@ -106,16 +115,6 @@
 ### 8. Qwen3-TTS 保存声音 (`SaveVoiceNode`) [新增]
 将克隆的声音特征及其参考文本永久保存到磁盘。
 - **能力**: 建立个性化声音库。保存后可通过 `LoadSpeakerNode` 极速调用。
-
-### 9. Qwen3-TTS 全局配置 (`QwenTTSConfigNode`) [New]
-为 TTS 节点定义标点符号的停顿持续时间，精确控制语音节奏。
-- **输入**:
-  - `pause_linebreak`: 换行符处的停顿时间。
-  - `period_pause`: 句号 (.) 后的停顿时间。
-  - `comma_pause`: 逗号 (,) 后的停顿时间。
-  - `question_pause`: 问号 (?) 后的停顿时间。
-  - `hyphen_pause`: 连字符 (-) 后的停顿时间。
-- **用法**: 连接到其他 TTS 节点的 `config` 输入端。
 
 ## 注意力机制
 

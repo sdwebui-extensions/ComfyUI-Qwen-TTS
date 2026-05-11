@@ -2,13 +2,22 @@
 
 English | [中文版](README_CN.md)
 
+> **⚠️ CRITICAL: transformers Version Requirement**
+>
+> Qwen3-TTS is **incompatible** with `transformers >= 5.0`. Versions 5.0+ introduce breaking API changes that will cause model loading failures and runtime errors. Please pin your version:
+> ```bash
+> pip install transformers==4.57.3
+> ```
+> If you have already installed a newer version, **downgrade immediately** before using this plugin.
+
 ![Nodes Screenshot](example/example.png)
 
 ComfyUI custom nodes for speech synthesis, voice cloning, and voice design, based on the open-source **Qwen3-TTS** project by the Alibaba Qwen team.
 
 ## 📋 Changelog
 
-- **2026-02-04**: Feature Update: Added Global Pause Control (`QwenTTSConfigNode`) and `extra_model_paths.yaml` support ([update.md](doc/update.md))
+- **2026-04-12 (v1.0.7)**: Removed `QwenTTSConfigNode` due to voice inconsistency; fixed MPS precision bug & CustomVoice channel mismatch; code cleanup ([update.md](doc/update.md))
+- **2026-02-04**: Added `extra_model_paths.yaml` support ([update.md](doc/update.md))
 - **2026-01-29**: Feature Update: Support for loading custom fine-tuned models & speakers ([update.md](doc/update.md))
   - *Note: Fine-tuning is currently experimental; zero-shot cloning is recommended for best results.*
 - **2026-01-27**: UI Optimization: Sleek LoadSpeaker UI; fixed PyTorch 2.6+ compatibility ([update.md](doc/update.md))
@@ -105,16 +114,6 @@ Load saved voice features and metadata with zero configuration.
 ### 8. Qwen3-TTS Save Voice (`SaveVoiceNode`) [New]
 Persist extracted voice features and metadata to disk for future use.
 - **Capabilities**: Build a permanent voice library for reuse via `LoadSpeakerNode`.
-
-### 9. Qwen3-TTS Config (`QwenTTSConfigNode`) [New]
-Define global pause durations for punctuation to control speech rhythm.
-- **Inputs**:
-  - `pause_linebreak`: Silence after linebreaks.
-  - `period_pause`: Silence after periods (.).
-  - `comma_pause`: Silence after commas (,).
-  - `question_pause`: Silence after question marks (?).
-  - `hyphen_pause`: Silence after hyphens (-).
-- **Usage**: Connect output to the `config` input of other TTS nodes.
 
 ## Attention Mechanisms
 
